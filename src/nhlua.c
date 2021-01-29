@@ -33,7 +33,6 @@ static int nhl_s_suffix(lua_State *);
 static int nhl_ing_suffix(lua_State *);
 static int nhl_an(lua_State *);
 static int nhl_rn2(lua_State *);
-static int nhl_random(lua_State *);
 static int nhl_level_difficulty(lua_State *);
 static void init_nhc_data(lua_State *);
 static int nhl_push_anything(lua_State *, int, void *);
@@ -608,23 +607,6 @@ nhl_rn2(lua_State *L)
     return 1;
 }
 
-/* random(10);  -- is the same as rn2(10); */
-/* random(5,8); -- same as 5 + rn2(8); */
-static int
-nhl_random(lua_State *L)
-{
-    int argc = lua_gettop(L);
-
-    if (argc == 1)
-        lua_pushinteger(L, rn2((int) luaL_checkinteger(L, 1)));
-    else if (argc == 2)
-        lua_pushinteger(L, luaL_checkinteger(L, 1) + rn2((int) luaL_checkinteger(L, 2)));
-    else
-        nhl_error(L, "Wrong args");
-
-    return 1;
-}
-
 /* level_difficulty() */
 static int
 nhl_level_difficulty(lua_State *L)
@@ -796,7 +778,6 @@ static const struct luaL_Reg nhl_functions[] = {
     {"ing_suffix", nhl_ing_suffix},
     {"an", nhl_an},
     {"rn2", nhl_rn2},
-    {"random", nhl_random},
     {"level_difficulty", nhl_level_difficulty},
     {NULL, NULL}
 };
