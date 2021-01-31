@@ -93,6 +93,73 @@ rn2_on_display_rng(register int x)
 }
 #endif  /* USE_ISAAC64 */
 
+/* Sets the seed for the random number generator */
+#ifdef USE_ISAAC64
+
+static void
+set_random(unsigned long seed,
+           int (*fn)(int))
+{
+    init_isaac64(seed, fn);
+}
+
+#else /* USE_ISAAC64 */
+
+/*ARGSUSED*/
+static void
+set_random(unsigned long seed,
+           int (*fn)(int) UNUSED)
+{
+    /* the types are different enough here that sweeping the different
+     * routine names into one via #defines is even more confusing
+     */
+# ifdef RANDOM /* srandom() from sys/share/random.c */
+    srandom((unsigned int) seed);
+# else
+#  if defined(__APPLE__) || defined(BSD) || defined(LINUX) || defined(ULTRIX) \
+    || defined(CYGWIN32) /* system srandom() */
+#   if defined(BSD) && !defined(POSIX_TYPES) && defined(SUNOS4)
+    (void)
+#   endif
+        srandom((int) seed);
+#  else
+#   ifdef UNIX /* system srand48() */
+    srand48((long) seed);
+#   else       /* poor quality system routine */
+    srand((int) seed);
+#   endif
+#  endif
+# endif
+}
+
+#endif /* USE_ISAAC64 */
+
+/* An appropriate version of this must always be provided in
+   port-specific code somewhere. It returns a number suitable
+   as seed for the random number generator */
+extern unsigned long sys_random_seed(void);
+
+/*
+ * Initializes the random number generator.
+ * Only call once.
+ */
+void
+init_random(int (*fn)(int))
+{
+    set_random(sys_random_seed(), fn);
+}
+
+/* Reshuffles the random number generator. */
+void
+reseed_random(int (*fn)(int))
+{
+    /* only reseed if we are certain that the seed generation is unguessable
+     * by the players. */
+    if (has_strong_rngseed)
+        init_random(fn);
+}
+
+
 /* 0 <= rn2(x) < x */
 int
 rn2(register int x)
