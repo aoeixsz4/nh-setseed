@@ -263,6 +263,8 @@ savegamestate(NHFILE* nhfp)
     urealtime.start_timing = urealtime.finish_time;
     save_killers(nhfp);
 
+    save_rng_state(nhfp);
+
     /* must come before g.migrating_objs and g.migrating_mons are freed */
     save_timers(nhfp, RANGE_GLOBAL);
     save_light_sources(nhfp, RANGE_GLOBAL);

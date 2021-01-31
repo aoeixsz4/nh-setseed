@@ -177,8 +177,10 @@ mk_artifact(struct obj *otmp,   /* existing object; ignored if alignment specifi
         n = altn;
 
     if (n) {
-        /* found at least one candidate; pick one at random */
-        m = eligible[rn2(n)]; /* [0..n-1] */
+        /* found at least one candidate; pick one at random. don't use the
+        stable dungeon RNG because the size of this list depends on
+        role/alignment */
+        m = eligible[rng_rn2(RNG_CORE, n)]; /* [0..n-1] */
         a = &artilist[m];
 
         /* make an appropriate object if necessary, then christen it */

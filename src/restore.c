@@ -619,6 +619,7 @@ restgamestate(NHFILE* nhfp, unsigned int* stuckid, unsigned int* steedid)
 
     /* this stuff comes after potential aborted restore attempts */
     restore_killers(nhfp);
+    restore_rng_state(nhfp);
     restore_timers(nhfp, RANGE_GLOBAL, 0L);
     restore_light_sources(nhfp);
 

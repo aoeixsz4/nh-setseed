@@ -82,7 +82,7 @@ typedef unsigned int uint32_t;
 
 /* The only place where nethack cares about 64-bit integers is in the
    Isaac64 random number generator.  If your environment can't support
-   64-bit integers, you should comment out USE_ISAAC64 in config.h so
+   64-bit integers, you should comment out USE_CHACHA in config.h so
    that the previous RNG gets used instead.  Then this file will be
    inhibited and it won't matter what the int64_t and uint64_t lines are. */
 typedef long long int int64_t;

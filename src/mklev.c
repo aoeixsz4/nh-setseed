@@ -741,6 +741,7 @@ fill_ordinary_room(struct mkroom *croom)
     coord pos;
     struct monst *tmonst; /* always put a web with a spider */
     int x, y;
+    enum whichrng prev_default_rng;
 
     if (croom->rtype != OROOM && croom->rtype != THEMEROOM)
         return;
@@ -760,12 +761,18 @@ fill_ordinary_room(struct mkroom *croom)
        avoided: maybe the player fell through a trap door
        while a monster was on the stairs. Conclusion:
        we have to check for monsters on the stairs anyway. */
+    if ((!rn2(3) || u.uhave.amulet) && somexyspace(croom, &pos)) {
+        /* switch to the unstable RNG: dependent on whether you have the amulet.
+        */
+        prev_default_rng = g.default_rng;
+        g.default_rng = RNG_CORE;
 
-    if ((u.uhave.amulet || !rn2(3)) && somexyspace(croom, &pos)) {
         tmonst = makemon((struct permonst *) 0, pos.x, pos.y, MM_NOGRP);
         if (tmonst && tmonst->data == &mons[PM_GIANT_SPIDER]
             && !occupied(pos.x, pos.y))
             (void) maketrap(pos.x, pos.y, WEB);
+
+        g.default_rng = prev_default_rng;
     }
     /* put traps and mimics inside */
     x = 8 - (level_difficulty() / 6);
@@ -842,6 +849,7 @@ makelevel(void)
     int room_threshold;
     register s_level *slev = Is_special(&u.uz);
     int i;
+    rng_budget_t *rngb;
 
     if (wiz1_level.dlevel == 0)
         init_dungeons();
@@ -922,6 +930,7 @@ makelevel(void)
         /* make up to 1 special room, with type dependent on depth;
          * note that mkroom doesn't guarantee a room gets created, and that this
          * step only sets the room's rtype - it doesn't fill it yet. */
+        rngb = create_rng_budget(g.default_rng, 1000);
         if (wizard && nh_getenv("SHOPTYPE"))
             do_mkroom(SHOPBASE);
         else if (u_depth > 1 && u_depth < depth(&medusa_level)
@@ -951,6 +960,7 @@ makelevel(void)
         else if (u_depth > 16 && !rn2(8)
                  && !(g.mvitals[PM_COCKATRICE].mvflags & G_GONE))
             do_mkroom(COCKNEST);
+        destroy_rng_budget(rngb);
 
  skip0:
         /* Place multi-dungeon branch. */
@@ -958,13 +968,17 @@ makelevel(void)
 
         /* for each room: put things inside */
         for (croom = g.rooms; croom->hx > 0; croom++) {
+            rngb = create_rng_budget(g.default_rng, 10000);
             fill_ordinary_room(croom);
+            destroy_rng_budget(rngb);
         }
     }
     /* Fill all special rooms now, regardless of whether this is a special
      * level, proto level, or ordinary level. */
     for (i = 0; i < g.nroom; ++i) {
+        rngb = create_rng_budget(g.default_rng, 10000);
         fill_special_room(&g.rooms[i]);
+        destroy_rng_budget(rngb);
     }
 }
 
@@ -1074,9 +1088,11 @@ mklev(void)
 {
     struct mkroom *croom;
     int ridx;
+    enum whichrng prev_default_rng;
 
-    reseed_random(RNG_CORE);
-    reseed_random(RNG_DISP);
+    hint_reseed_random();
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_DLVL(&u.uz);
 
     init_mapseen(&u.uz);
     if (getbones())
@@ -1106,8 +1122,8 @@ mklev(void)
     for (ridx = 0; ridx < SIZE(g.rooms); ridx++)
         g.rooms[ridx].orig_rtype = g.rooms[ridx].rtype;
 
-    reseed_random(RNG_CORE);
-    reseed_random(RNG_DISP);
+    hint_reseed_random();
+    g.default_rng = prev_default_rng;
 }
 
 void

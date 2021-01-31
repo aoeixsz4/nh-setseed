@@ -38,7 +38,7 @@
 
 #include "hack.h"
 
-#if defined(USE_ISAAC64) && !defined(RANDOM)
+#if defined(USE_CHACHA) && !defined(RANDOM)
 #else
 #ifdef LIBC_SCCS
 #ifndef lint
@@ -379,7 +379,7 @@ random()
     }
     return (i);
 }
-#endif /* else defined(USE_ISAAC64) && !defined(RANDOM) */
+#endif /* else defined(USE_CHACHA) && !defined(RANDOM) */
 
 
 

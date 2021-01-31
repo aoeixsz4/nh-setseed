@@ -143,7 +143,7 @@
 #define USE_STDARG
 
 /* Use the high quality random number routines. */
-#ifndef USE_ISAAC64
+#ifndef USE_CHACHA
 # ifdef RANDOM
 #  define Rand() random()
 # else

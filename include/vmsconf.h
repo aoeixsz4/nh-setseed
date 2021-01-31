@@ -160,10 +160,10 @@ PANICTRACE_GDB=2  #at conclusion of panic, show a call traceback and then
 
 #define RANDOM /* use sys/share/random.c instead of vaxcrtl rand */
 
-/* config.h defines USE_ISAAC64; we'll use it on Alpha or IA64 but not VAX;
+/* config.h defines USE_CHACHA; we'll use it on Alpha or IA64 but not VAX;
    it overrides RANDOM */
-#if (defined(VAX) || defined(vax) || defined(__vax)) && defined(USE_ISAAC64)
-#undef ISAAC64
+#if (defined(VAX) || defined(vax) || defined(__vax)) && defined(USE_CHACHA)
+#undef CHACHA
 #endif
 
 #define FCMASK 0660 /* file creation mask */
@@ -266,7 +266,7 @@ typedef __mode_t mode_t;
 #define rindex strrchr
 
 /* Use the high quality random number routines. */
-#ifndef USE_ISAAC64
+#ifndef USE_CHACHA
 # if defined(RANDOM)
 #  define Rand() random()
 /* VMS V7 adds these entry points to DECC$SHR; stick with the nethack-supplied

@@ -1,0 +1,5 @@
+* make sure random artifact item generation is consistent (e.g. what if one player already has the arti but the other doesn't)
+* think about setseed interaction with bones (force bonesless?)
+* make sure monster genocide doesn't affect generation
+  * orcs genoed affects stolen_booty
+* refine monster generation (e.g. the titan on Medusa should be consistently peaceful or not)

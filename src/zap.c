@@ -1244,9 +1244,13 @@ obj_resists(struct obj *obj,
         || (obj->otyp == CORPSE && is_rider(&mons[obj->corpsenm]))) {
         return TRUE;
     } else {
-        int chance = rn2(100);
+        int chance = (obj->oartifact ? achance : ochance);
 
-        return (boolean) (chance < (obj->oartifact ? achance : ochance));
+        /* Avoid advancing the RNG if the chance is 0 */
+        if (chance <= 0)
+            return FALSE;
+
+        return (boolean) (rn2(100) < chance);
     }
 }
 

@@ -55,6 +55,7 @@ static void
 dowaterdemon(void)
 {
     struct monst *mtmp;
+    int rnd_wish_fate = rng_rnd(RNG_FOUNTAIN, 100); /* do this here for RNG stability */
 
     if (!(g.mvitals[PM_WATER_DEMON].mvflags & G_GONE)) {
         if ((mtmp = makemon(&mons[PM_WATER_DEMON], u.ux, u.uy,
@@ -66,7 +67,7 @@ dowaterdemon(void)
 
             /* Give those on low levels a (slightly) better chance of survival
              */
-            if (rnd(100) > (80 + level_difficulty())) {
+            if (rnd_wish_fate > (80 + level_difficulty())) {
                 pline("Grateful for %s release, %s grants you a wish!",
                       mhis(mtmp), mhe(mtmp));
                 /* give a wish and discard the monster (mtmp set to null) */
@@ -224,7 +225,7 @@ drinkfountain(void)
 {
     /* What happens when you drink from a fountain? */
     register boolean mgkftn = (levl[u.ux][u.uy].blessedftn == 1);
-    register int fate = rnd(30);
+    register int fate = rng_rnd(RNG_FOUNTAIN, 30);
 
     if (Levitation) {
         floating_above("fountain");
@@ -264,6 +265,44 @@ drinkfountain(void)
             return;
     } else {
         switch (fate) {
+        case 10: /* Water demon */
+            /* ensure this is the same case as in dipfountain for RNG stability
+             */
+            dowaterdemon();
+            break;
+        case 11: /* Fountain of snakes! */
+            dowatersnakes();
+            break;
+        case 12: /* Water Nymph */
+            dowaternymph();
+            break;
+        case 13: /* Find a gem in the sparkling waters. */
+            if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
+                dofindgem();
+                break;
+            }
+            dowaternymph();
+            break;
+        case 14: /* Gushing forth in this room */
+            dogushforth(TRUE);
+            break;
+        case 15: { /* Maybe curse some items */
+            register struct obj *obj;
+            int buc_changed = 0;
+
+            pline("This water's no good!");
+            morehungry(rn1(20, 11));
+            exercise(A_CON, FALSE);
+            /* this is more severe than rndcurse() */
+            for (obj = g.invent; obj; obj = obj->nobj)
+                if (obj->oclass != COIN_CLASS && !obj->cursed && !rn2(5)) {
+                    curse(obj);
+                    ++buc_changed;
+                }
+            if (buc_changed)
+                update_inventory();
+            break;
+        }
         case 19: /* Self-knowledge */
             You_feel("self-knowledgeable...");
             display_nhwindow(WIN_MESSAGE, FALSE);
@@ -288,29 +327,6 @@ drinkfountain(void)
             losehp(rnd(10), "contaminated water", KILLED_BY);
             exercise(A_CON, FALSE);
             break;
-        case 22: /* Fountain of snakes! */
-            dowatersnakes();
-            break;
-        case 23: /* Water demon */
-            dowaterdemon();
-            break;
-        case 24: { /* Maybe curse some items */
-            register struct obj *obj;
-            int buc_changed = 0;
-
-            pline("This water's no good!");
-            morehungry(rn1(20, 11));
-            exercise(A_CON, FALSE);
-            /* this is more severe than rndcurse() */
-            for (obj = g.invent; obj; obj = obj->nobj)
-                if (obj->oclass != COIN_CLASS && !obj->cursed && !rn2(5)) {
-                    curse(obj);
-                    ++buc_changed;
-                }
-            if (buc_changed)
-                update_inventory();
-            break;
-        }
         case 25: /* See invisible */
             if (Blind) {
                 if (Invisible) {
@@ -331,15 +347,6 @@ drinkfountain(void)
             (void) monster_detect((struct obj *) 0, 0);
             exercise(A_WIS, TRUE);
             break;
-        case 27: /* Find a gem in the sparkling waters. */
-            if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
-                dofindgem();
-                break;
-            }
-            /*FALLTHRU*/
-        case 28: /* Water Nymph */
-            dowaternymph();
-            break;
         case 29: /* Scare */
         {
             register struct monst *mtmp;
@@ -353,9 +360,6 @@ drinkfountain(void)
             }
             break;
         }
-        case 30: /* Gushing forth in this room */
-            dogushforth(TRUE);
-            break;
         default:
             pline("This tepid %s is tasteless.",
                   hliquid("water"));
@@ -431,8 +435,28 @@ dipfountain(register struct obj *obj)
         }
     }
 
-    switch (rnd(30)) {
-    case 16: /* Curse the item */
+    switch (rng_rnd(RNG_FOUNTAIN, 30)) {
+    case 10: /* Water Demon */
+        /* ensure this is the same case as in drinkfountain for RNG stability */
+        dowaterdemon();
+        break;
+    case 11: /* an Endless Stream of Snakes */
+        dowatersnakes();
+        break;
+    case 12: /* Water Nymph */
+        dowaternymph();
+        break;
+    case 13: /* Find a gem */
+        if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
+            dofindgem();
+            break;
+        }
+        dogushforth(FALSE);
+        break;
+    case 14: /* Water gushes forth */
+        dogushforth(FALSE);
+        break;
+    case 15: /* Curse the item */
         if (obj->oclass != COIN_CLASS && !obj->cursed) {
             curse(obj);
         }
@@ -448,24 +472,6 @@ dipfountain(register struct obj *obj)
         } else {
             pline("A feeling of loss comes over you.");
         }
-        break;
-    case 21: /* Water Demon */
-        dowaterdemon();
-        break;
-    case 22: /* Water Nymph */
-        dowaternymph();
-        break;
-    case 23: /* an Endless Stream of Snakes */
-        dowatersnakes();
-        break;
-    case 24: /* Find a gem */
-        if (!FOUNTAIN_IS_LOOTED(u.ux, u.uy)) {
-            dofindgem();
-            break;
-        }
-        /*FALLTHRU*/
-    case 25: /* Water gushes forth */
-        dogushforth(FALSE);
         break;
     case 26: /* Strange feeling */
         pline("A strange tingling runs up your %s.", body_part(ARM));

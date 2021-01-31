@@ -2357,11 +2357,11 @@ djinni_from_bottle(struct obj *obj)
         pline("%s speaks.", Something);
     }
 
-    chance = rn2(5);
+    chance = rng_rn2(RNG_DJINNI_FROM_BOTTLE, 5);
     if (obj->blessed)
-        chance = (chance == 4) ? rnd(4) : 0;
+        chance = (chance == 4) ? rng_rnd(RNG_DJINNI_FROM_BOTTLE, 4) : 0;
     else if (obj->cursed)
-        chance = (chance == 0) ? rn2(4) : 4;
+        chance = (chance == 0) ? rng_rn2(RNG_DJINNI_FROM_BOTTLE, 4) : 4;
     /* 0,1,2,3,4:  b=80%,5,5,5,5; nc=20%,20,20,20,20; c=5%,5,5,5,80 */
 
     switch (chance) {

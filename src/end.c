@@ -1350,6 +1350,12 @@ really_done(int how)
         dump_everything(how, endtime);
     }
 
+#ifdef USE_CHACHA
+    if ((wizard || showdebug("rnd.c")) && !done_stopprint) {
+        wiz_rng();
+    }
+#endif
+
     /* if pets will contribute to score, populate g.mydogs list now
        (bones creation isn't a factor, but pline() messaging is; used to
        be done even sooner, but we need it to come after dump_everything()

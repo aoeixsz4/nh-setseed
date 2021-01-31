@@ -125,7 +125,7 @@ WINOBJ = $(WINCURSESOBJ)
 SYSTEM	= SysVMS.timestamp;
 GAME	= $(SRC)nethack.exe;
 
-# RANDOM is defined in vmsconf.h, USE_ISAAC64 might be defined in config.h;
+# RANDOM is defined in vmsconf.h, USE_CHACHA might be defined in config.h;
 RANDSRC = isaac64.c random.c
 RANDOBJ = isaac64.obj,random.obj
 

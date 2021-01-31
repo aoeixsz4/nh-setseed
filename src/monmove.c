@@ -1671,7 +1671,8 @@ set_apparxy(register struct monst* mtmp)
 
     /* without something like the following, invisibility and displacement
        are too powerful */
-    gotu = notseen ? !rn2(3) : notthere ? !rn2(4) : FALSE;
+    gotu = notseen ? !rng_rn2(RNG_CORE, 3) :
+        notthere ? !rng_rn2(RNG_CORE, 4) : FALSE;
 
     if (!gotu) {
         register int try_cnt = 0;
@@ -1679,8 +1680,8 @@ set_apparxy(register struct monst* mtmp)
         do {
             if (++try_cnt > 200)
                 goto found_you; /* punt */
-            mx = u.ux - disp + rn2(2 * disp + 1);
-            my = u.uy - disp + rn2(2 * disp + 1);
+            mx = u.ux - disp + rng_rn2(RNG_CORE, 2 * disp + 1);
+            my = u.uy - disp + rng_rn2(RNG_CORE, 2 * disp + 1);
         } while (!isok(mx, my)
                  || (disp != 2 && mx == mtmp->mx && my == mtmp->my)
                  || ((mx != u.ux || my != u.uy) && !passes_walls(mtmp->data)

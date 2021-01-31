@@ -587,6 +587,13 @@ const struct instance_globals g_init = {
     /* rip.c */
     UNDEFINED_PTR, /* rip */
 
+    /* rnd.c */
+#ifdef USE_CHACHA
+    UNDEFINED_VALUES, /* rngs */
+    UNDEFINED_VALUES, /* seed */
+    RNG_CORE, /* default_rng */
+#endif
+
     /* role.c */
     UNDEFINED_VALUES, /* urole */
     UNDEFINED_VALUES, /* urace */
@@ -749,6 +756,8 @@ decl_globals_init(void)
     g.urole = urole_init_data;
     g.urace = urace_init_data;
 
+    /* initialize the random number generator */
+    init_random();
 
 }
 

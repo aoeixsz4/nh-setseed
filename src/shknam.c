@@ -449,6 +449,9 @@ mkshobj_at(const struct shclass* shp, int sx, int sy, boolean mkspecl)
     struct monst *mtmp;
     struct permonst *ptr;
     int atype;
+    rng_budget_t *rngb;
+
+    rngb = create_rng_budget(g.default_rng, 50);
 
     /* 3.6 tribute */
     if (mkspecl && (!strcmp(shp->name, "rare books")
@@ -457,6 +460,7 @@ mkshobj_at(const struct shclass* shp, int sx, int sy, boolean mkspecl)
 
         if (novel)
             g.context.tribute.bookstock = TRUE;
+        destroy_rng_budget(rngb);
         return;
     }
 
@@ -464,7 +468,7 @@ mkshobj_at(const struct shclass* shp, int sx, int sy, boolean mkspecl)
         && (ptr = mkclass(S_MIMIC, 0)) != 0
         && (mtmp = makemon(ptr, sx, sy, NO_MM_FLAGS)) != 0) {
         /* note: makemon will set the mimic symbol to a shop item */
-        if (rn2(10) >= depth(&u.uz)) {
+        if (rng_rn2(RNG_CORE, 10) >= depth(&u.uz)) {
             mtmp->m_ap_type = M_AP_OBJECT;
             mtmp->mappearance = STRANGE_OBJECT;
         }
@@ -477,6 +481,8 @@ mkshobj_at(const struct shclass* shp, int sx, int sy, boolean mkspecl)
         else
             (void) mkobj_at(atype, sx, sy, TRUE);
     }
+
+    destroy_rng_budget(rngb);
 }
 
 /* extract a shopkeeper name for the given shop type */

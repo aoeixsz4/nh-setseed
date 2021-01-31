@@ -1708,6 +1708,83 @@ wiz_intrinsic(void)
 
 RESTORE_WARNING_FORMAT_NONLITERAL
 
+static void
+snprint_whichrng(char *buf, int n, enum whichrng rng)
+{
+    int l;
+    if (rng == RNG_CORE) {
+        Snprintf(buf, n, "RNG_CORE");
+    } else if (rng == RNG_GAME_INIT) {
+        Snprintf(buf, n, "RNG_GAME_INIT");
+    } else if (rng == RNG_U_INIT) {
+        Snprintf(buf, n, "RNG_U_INIT");
+    } else if (rng == RNG_DISP) {
+        Snprintf(buf, n, "RNG_DISP");
+    } else if (rng >= RNG_DLVL_0 && rng <= RNG_DLVL_MAX) {
+        l = rng - RNG_DLVL_0;
+        Snprintf(buf, n, "RNG_DLVL(%d) [%s %d]", l, g.dungeons[ledger_to_dnum(l)].dname, ledger_to_dlev(l));
+    } else if (rng == RNG_DJINNI_FROM_BOTTLE) {
+        Snprintf(buf, n, "RNG_DJINNI_FROM_BOTTLE");
+    } else if (rng == RNG_FOUNTAIN) {
+        Snprintf(buf, n, "RNG_FOUNTAIN");
+    } else {
+        Snprintf(buf, n, "unknown whichrng (%d)", rng);
+    }
+}
+
+/* #wizrng command - show status of RNGs */
+int
+wiz_rng(void)
+{
+    winid win;
+    int i;
+    char row[COLNO + 1];
+    char buf[BUFSZ];
+
+    win = create_nhwindow(NHW_TEXT);
+
+    putstr(win, 0, "");
+    Snprintf(row, sizeof(row), "Seed for this dungeon:");
+    putstr(win, 0, row);
+
+    i = snprintf(buf, sizeof(buf), "OPTIONS=seed:");
+    get_printable_seed(buf + i);
+    putstr(win, 0, buf);
+
+    putstr(win, 0, "");
+
+    Snprintf(row, sizeof(row), "Dlvl RNG position:   %llu", g.rngs[RNG_DLVL(&u.uz)].position);
+    putstr(win, 0, row);
+    putstr(win, 0, "(For any given dlvl, this should be consistent between runs of the same seed.)");
+
+    putstr(win, 0, "");
+
+    snprint_whichrng(buf, sizeof(buf), g.default_rng);
+    Snprintf(row, sizeof(row), "Default RNG:         %s", buf);
+    putstr(win, 0, row);
+    putstr(win, 0, "(During gameplay, this should always be RNG_CORE.)");
+
+    putstr(win, 0, "");
+    putstr(win, 0, "---");
+    putstr(win, 0, "");
+    putstr(win, 0, "All RNG positions:");
+    putstr(win, 0, "");
+
+    for (i = 0; i < RNG_INDEX_MAX; ++i) {
+        if (i >= RNG_DLVL_0 && i <= RNG_DLVL_MAX && !g.rngs[i].position) {
+            /* uninteresting; elide for the sake of brevity */
+            continue;
+        }
+        snprint_whichrng(buf, sizeof(buf), i);
+        Snprintf(row, sizeof(row), "%-40s: %llu", buf, g.rngs[i].position);
+        putstr(win, 0, row);
+    }
+    putstr(win, 0, "(all other RNGs that have been elided are at position 0)");
+    display_nhwindow(win, TRUE);
+    destroy_nhwindow(win);
+    return 0;
+}
+
 /* #wizrumorcheck command - verify each rumor access */
 static int
 wiz_rumor_check(void)
@@ -2052,6 +2129,8 @@ struct ext_func_tab extcmdlist[] = {
               wiz_map, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizmgender", "force added info about monster gender",
               wiz_mgender, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+    { '\0',   "wizrng", "show status of RNGs",
+              wiz_rng, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizrumorcheck", "verify rumor boundaries",
               wiz_rumor_check, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizseenv", "show map locations' seen vectors",

@@ -333,7 +333,7 @@
 
 /* Use the high quality random number routines. */
 /* the high quality random number routines */
-#ifndef USE_ISAAC64
+#ifndef USE_CHACHA
 # if defined(BSD) || defined(LINUX) || defined(ULTRIX) || defined(CYGWIN32) \
     || defined(RANDOM) || defined(MACOSX)
 #  define Rand() random()
