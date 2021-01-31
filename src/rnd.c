@@ -26,7 +26,7 @@ static struct rnglist_t rnglist[] = {
     { rn2_on_display_rng, FALSE, { 0 } },       /* DISP */
 };
 
-int
+static int
 whichrng(int (*fn)(int))
 {
     int i;
@@ -37,7 +37,7 @@ whichrng(int (*fn)(int))
     return -1;
 }
 
-void
+static void
 init_isaac64(unsigned long seed, int (*fn)(int))
 {
     unsigned char new_rng_state[sizeof seed];

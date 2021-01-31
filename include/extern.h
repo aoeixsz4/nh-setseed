@@ -2142,10 +2142,6 @@ extern void genl_outrip(winid, int, time_t);
 
 /* ### rnd.c ### */
 
-#ifdef USE_ISAAC64
-extern void init_isaac64(unsigned long, int(*fn)(int));
-extern long nhrand(void);
-#endif
 extern void init_random(int(*fn)(int));
 extern void reseed_random(int(*fn)(int));
 extern int rn2(int);
