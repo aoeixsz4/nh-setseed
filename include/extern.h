@@ -926,8 +926,6 @@ extern int strncmpi(const char *, const char *, int);
 extern char *strstri(const char *, const char *);
 #endif
 extern boolean fuzzymatch(const char *, const char *, const char *, boolean);
-extern void init_random(int(*fn)(int));
-extern void reseed_random(int(*fn)(int));
 extern time_t getnow(void);
 extern int getyear(void);
 #if 0
@@ -2159,6 +2157,8 @@ extern void genl_outrip(winid, int, time_t);
 extern void init_isaac64(unsigned long, int(*fn)(int));
 extern long nhrand(void);
 #endif
+extern void init_random(int(*fn)(int));
+extern void reseed_random(int(*fn)(int));
 extern int rn2(int);
 extern int rn2_on_display_rng(int);
 extern int rnl(int);
