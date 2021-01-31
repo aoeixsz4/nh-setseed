@@ -173,8 +173,8 @@ enum explosion_types {
  *
  * Respectively return a random monster or object.
  */
-#define random_monster(rng) rng(NUMMONS)
-#define random_object(rng) (rng(NUM_OBJECTS - 1) + 1)
+#define random_monster(rng) rng_rn2(rng, NUMMONS)
+#define random_object(rng) (rng_rn2(rng, NUM_OBJECTS - 1) + 1)
 
 /*
  * what_obj()
@@ -187,16 +187,16 @@ enum explosion_types {
 #define what_mon(mon, rng) (Hallucination ? random_monster(rng) : mon)
 
 /*
- * newsym_rn2
+ * RNG_NEWSYM
  *
  * An appropriate random number generator for use with newsym(), when
  * randomness is needed there. This is currently hardcoded as
- * rn2_on_display_rng, but is futureproofed for cases where we might
+ * RNG_DISP, but is futureproofed for cases where we might
  * want to prevent display-random objects entering the character's
  * memory (this isn't important at present but may be if we need
  * reproducible gameplay for some reason).
  */
-#define newsym_rn2 rn2_on_display_rng
+#define RNG_NEWSYM RNG_DISP
 
 /*
  * covers_objects()
@@ -234,7 +234,7 @@ enum explosion_types {
  */
 #define maybe_display_usteed(otherwise_self)                            \
     ((u.usteed && mon_visible(u.usteed))                                \
-     ? ridden_mon_to_glyph(u.usteed, rn2_on_display_rng)                \
+     ? ridden_mon_to_glyph(u.usteed, RNG_DISP)                          \
      : (otherwise_self))
 
 #define display_self() \

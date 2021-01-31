@@ -242,7 +242,7 @@ its_dead(int rx, int ry, int *resp)
         int visglyph, corpseglyph;
 
         visglyph = glyph_at(rx, ry);
-        corpseglyph = obj_to_glyph(corpse, rn2);
+        corpseglyph = obj_to_glyph(corpse, RNG_DEFAULT);
 
         if (Blind && (visglyph != corpseglyph))
             map_object(corpse, TRUE);

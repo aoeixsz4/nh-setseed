@@ -1121,7 +1121,7 @@ sho_obj_return_to_u(struct obj *obj)
     if ((u.dx || u.dy) && (g.bhitpos.x != u.ux || g.bhitpos.y != u.uy)) {
         int x = g.bhitpos.x - u.dx, y = g.bhitpos.y - u.dy;
 
-        tmp_at(DISP_FLASH, obj_to_glyph(obj, rn2_on_display_rng));
+        tmp_at(DISP_FLASH, obj_to_glyph(obj, RNG_DISP));
         while (isok(x,y) && (x != u.ux || y != u.uy)) {
             tmp_at(x, y);
             delay_output();
@@ -1202,7 +1202,7 @@ throwit(struct obj *obj,
         g.bhitpos.x = mon->mx;
         g.bhitpos.y = mon->my;
         if (tethered_weapon)
-            tmp_at(DISP_TETHER, obj_to_glyph(obj, rn2_on_display_rng));
+            tmp_at(DISP_TETHER, obj_to_glyph(obj, RNG_DISP));
     } else if (u.dz) {
         if (u.dz < 0
             /* Mjollnir must we wielded to be thrown--caller verifies this;
@@ -1429,7 +1429,7 @@ throwit(struct obj *obj,
             /* venom [via #monster to spit while poly'd] fails breaktest()
                but we want to force breakage even when location IS_SOFT() */
             || obj->oclass == VENOM_CLASS) {
-            tmp_at(DISP_FLASH, obj_to_glyph(obj, rn2_on_display_rng));
+            tmp_at(DISP_FLASH, obj_to_glyph(obj, RNG_DISP));
             tmp_at(g.bhitpos.x, g.bhitpos.y);
             delay_output();
             tmp_at(DISP_END, 0);

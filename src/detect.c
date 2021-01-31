@@ -89,11 +89,11 @@ map_monst(struct monst *mtmp, boolean showtail)
 {
     if (def_monsyms[(int) mtmp->data->mlet].sym == ' ')
         show_glyph(mtmp->mx, mtmp->my,
-                   detected_mon_to_glyph(mtmp, newsym_rn2));
+                   detected_mon_to_glyph(mtmp, RNG_NEWSYM));
     else
         show_glyph(mtmp->mx, mtmp->my, mtmp->mtame
-                   ? pet_to_glyph(mtmp, newsym_rn2)
-                   : mon_to_glyph(mtmp, newsym_rn2));
+                   ? pet_to_glyph(mtmp, RNG_NEWSYM)
+                   : mon_to_glyph(mtmp, RNG_NEWSYM));
 
     if (showtail && mtmp->data == &mons[PM_LONG_WORM])
         detect_wsegs(mtmp, 0);
@@ -841,10 +841,10 @@ sense_trap(struct trap *trap, xchar x, xchar y, int src_cursed)
             obj.ox = x;
             obj.oy = y;
         }
-        obj.otyp = !Hallucination ? GOLD_PIECE : random_object(rn2);
+        obj.otyp = !Hallucination ? GOLD_PIECE : random_object(RNG_DEFAULT);
         obj.quan = (long) ((obj.otyp == GOLD_PIECE) ? rnd(10)
                            : objects[obj.otyp].oc_merge ? rnd(2) : 1);
-        obj.corpsenm = random_monster(rn2); /* if otyp == CORPSE */
+        obj.corpsenm = random_monster(RNG_DEFAULT); /* if otyp == CORPSE */
         map_object(&obj, 1);
     } else if (trap) {
         map_trap(trap, 1);
@@ -1895,7 +1895,7 @@ reveal_terrain_getglyph(int x, int y, int full, unsigned swallowed,
            an object, replacing any object or trap at its spot) */
         glyph = !swallowed ? glyph_at(x, y) : levl_glyph;
         if (keep_mons && x == u.ux && y == u.uy && swallowed)
-            glyph = mon_to_glyph(u.ustuck, rn2_on_display_rng);
+            glyph = mon_to_glyph(u.ustuck, RNG_DISP);
         else if (((glyph_is_monster(glyph)
                    || glyph_is_warning(glyph)) && !keep_mons)
                  || glyph_is_swallow(glyph))

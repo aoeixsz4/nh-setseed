@@ -382,9 +382,9 @@ others_check(const char* ftype, const char* fname, winid* winptr)
 RESTORE_WARNING_FORMAT_NONLITERAL
 
 /* Gets a random line of text from file 'fname', and returns it.
-   rng is the random number generator to use, and should act like rn2 does. */
+   rng is the random number generator to use */
 char *
-get_rnd_text(const char* fname, char* buf, int (*rng)(int))
+get_rnd_text(const char* fname, char* buf, enum whichrng rng)
 {
     dlb *fh;
 
@@ -408,7 +408,7 @@ get_rnd_text(const char* fname, char* buf, int (*rng)(int))
            that save and restore might fix the problem wouldn't be useful */
         if (sizetxt < 1L)
             return buf;
-        tidbit = (*rng)(sizetxt);
+        tidbit = rng_rn2(rng, sizetxt);
 
         (void) dlb_fseek(fh, starttxt + tidbit, SEEK_SET);
         (void) dlb_fgets(line, sizeof line, fh);

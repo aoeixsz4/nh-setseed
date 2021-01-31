@@ -7,67 +7,29 @@
 #ifdef USE_ISAAC64
 #include "isaac64.h"
 
-static int whichrng(int (*fn)(int));
-
-#if 0
-static isaac64_ctx rng_state;
-#endif
-
-struct rnglist_t {
-    int (*fn)(int);
-    boolean init;
-    isaac64_ctx rng_state;
-};
-
-enum { CORE = 0, DISP = 1 };
-
-static struct rnglist_t rnglist[] = {
-    { rn2, FALSE, { 0 } },                      /* CORE */
-    { rn2_on_display_rng, FALSE, { 0 } },       /* DISP */
-};
-
-static int
-whichrng(int (*fn)(int))
-{
-    int i;
-
-    for (i = 0; i < SIZE(rnglist); ++i)
-        if (rnglist[i].fn == fn)
-            return i;
-    return -1;
-}
+static struct isaac64_ctx rnglist[RNG_INDEX_MAX] = { };
 
 static void
-init_isaac64(unsigned long seed, int (*fn)(int))
+init_isaac64(enum whichrng rng, unsigned long seed)
 {
     unsigned char new_rng_state[sizeof seed];
     unsigned i;
-    int rngindx = whichrng(fn);
 
-    if (rngindx < 0)
-        panic("Bad rng function passed to init_isaac64().");
+    if (rng < 0 || rng >= RNG_INDEX_MAX)
+        panic("Bad rng %d passed to init_isaac64().", rng);
 
     for (i = 0; i < sizeof seed; i++) {
         new_rng_state[i] = (unsigned char) (seed & 0xFF);
         seed >>= 8;
     }
-    isaac64_init(&rnglist[rngindx].rng_state, new_rng_state,
-                 (int) sizeof seed);
+    isaac64_init(&rnglist[rng], new_rng_state,
+                 (int) sizeof new_rng_state);
 }
 
 static int
-RND(int x)
+rng_RND(enum whichrng rng, int x)
 {
-    return (isaac64_next_uint64(&rnglist[CORE].rng_state) % x);
-}
-
-/* 0 <= rn2(x) < x, but on a different sequence from the "main" rn2;
-   used in cases where the answer doesn't affect gameplay and we don't
-   want to give users easy control over the main RNG sequence. */
-int
-rn2_on_display_rng(register int x)
-{
-    return (isaac64_next_uint64(&rnglist[DISP].rng_state) % x);
+    return (isaac64_next_uint64(&rnglist[rng]) % x);
 }
 
 #else   /* USE_ISAAC64 */
@@ -75,21 +37,26 @@ rn2_on_display_rng(register int x)
 /* "Rand()"s definition is determined by [OS]conf.h */
 #if defined(LINT) && defined(UNIX) /* rand() is long... */
 extern int rand(void);
-#define RND(x) (rand() % x)
+#define system_RND(x) (rand() % x)
 #else /* LINT */
 #if defined(UNIX) || defined(RANDOM)
-#define RND(x) ((int) (Rand() % (long) (x)))
+#define system_RND(x) ((int) (Rand() % (long) (x)))
 #else
 /* Good luck: the bottom order bits are cyclic. */
-#define RND(x) ((int) ((Rand() >> 3) % (x)))
+#define system_RND(x) ((int) ((Rand() >> 3) % (x)))
 #endif
 #endif /* LINT */
-int
-rn2_on_display_rng(register int x)
+
+static int
+rng_RND(enum whichrng rng, int x)
 {
-    static unsigned seed = 1;
-    seed *= 2739110765;
-    return (int)((seed >> 16) % (unsigned)x);
+    if (which_rng == RNG_DISP) {
+        static unsigned seed = 1;
+        seed *= 2739110765;
+        return (int)((seed >> 16) % (unsigned)x);
+    } else {
+        return system_RND(x);
+    }
 }
 #endif  /* USE_ISAAC64 */
 
@@ -97,19 +64,19 @@ rn2_on_display_rng(register int x)
 #ifdef USE_ISAAC64
 
 static void
-set_random(unsigned long seed,
-           int (*fn)(int))
+set_random(enum whichrng rng, unsigned long seed)
 {
-    init_isaac64(seed, fn);
+    init_isaac64(rng, seed);
 }
 
 #else /* USE_ISAAC64 */
 
 /*ARGSUSED*/
 static void
-set_random(unsigned long seed,
-           int (*fn)(int) UNUSED)
+set_random(enum whichrng rng, unsigned long seed)
 {
+    if (rng == RNG_DISP) return;
+
     /* the types are different enough here that sweeping the different
      * routine names into one via #defines is even more confusing
      */
@@ -144,42 +111,39 @@ extern unsigned long sys_random_seed(void);
  * Only call once.
  */
 void
-init_random(int (*fn)(int))
+init_random(enum whichrng rng)
 {
-    set_random(sys_random_seed(), fn);
+    set_random(rng, sys_random_seed());
 }
 
 /* Reshuffles the random number generator. */
 void
-reseed_random(int (*fn)(int))
+reseed_random(enum whichrng rng)
 {
     /* only reseed if we are certain that the seed generation is unguessable
      * by the players. */
     if (has_strong_rngseed)
-        init_random(fn);
+        init_random(rng);
 }
 
 
 /* 0 <= rn2(x) < x */
 int
-rn2(register int x)
+rng_rn2(enum whichrng rng, register int x)
 {
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     if (x <= 0) {
         impossible("rn2(%d) attempted", x);
         return 0;
     }
-    x = RND(x);
-    return x;
-#else
-    return RND(x);
 #endif
+    return rng_RND(rng, x);
 }
 
 /* 0 <= rnl(x) < x; sometimes subtracting Luck;
    good luck approaches 0, bad luck approaches (x-1) */
 int
-rnl(register int x)
+rng_rnl(enum whichrng rng, register int x)
 {
     register int i, adjustment;
 
@@ -209,8 +173,8 @@ rnl(register int x)
          */
     }
 
-    i = RND(x);
-    if (adjustment && rn2(37 + abs(adjustment))) {
+    i = rng_RND(rng, x);
+    if (adjustment && rng_rn2(rng, 37 + abs(adjustment))) {
         i -= adjustment;
         if (i < 0)
             i = 0;
@@ -222,7 +186,7 @@ rnl(register int x)
 
 /* 1 <= rnd(x) <= x */
 int
-rnd(register int x)
+rng_rnd(enum whichrng rng, register int x)
 {
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     if (x <= 0) {
@@ -230,13 +194,13 @@ rnd(register int x)
         return 1;
     }
 #endif
-    x = RND(x) + 1;
+    x = rng_RND(rng, x) + 1;
     return x;
 }
 
 /* d(N,X) == NdX == dX+dX+...+dX N times; n <= d(n,x) <= (n*x) */
 int
-d(register int n, register int x)
+rng_d(enum whichrng rng, register int n, register int x)
 {
     register int tmp = n;
 
@@ -247,19 +211,19 @@ d(register int n, register int x)
     }
 #endif
     while (n--)
-        tmp += RND(x);
+        tmp += rng_RND(rng, x);
     return tmp; /* Alea iacta est. -- J.C. */
 }
 
 /* 1 <= rne(x) <= max(u.ulevel/3,5) */
 int
-rne(register int x)
+rng_rne(enum whichrng rng, register int x)
 {
     register int tmp, utmp;
 
     utmp = (u.ulevel < 15) ? 5 : u.ulevel / 3;
     tmp = 1;
-    while (tmp < utmp && !rn2(x))
+    while (tmp < utmp && !rng_rn2(rng, x))
         tmp++;
     return tmp;
 
@@ -275,7 +239,7 @@ rne(register int x)
 
 /* rnz: everyone's favorite! */
 int
-rnz(int i)
+rng_rnz(enum whichrng rng, int i)
 {
 #ifdef LINT
     int x = i;
@@ -285,9 +249,9 @@ rnz(int i)
     register long tmp = 1000L;
 #endif
 
-    tmp += rn2(1000);
-    tmp *= rne(4);
-    if (rn2(2)) {
+    tmp += rng_rn2(rng, 1000);
+    tmp *= rng_rne(rng, 4);
+    if (rng_rn2(rng, 2)) {
         x *= tmp;
         x /= 1000;
     } else {
