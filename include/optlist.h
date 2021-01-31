@@ -404,6 +404,10 @@ opt_##a,
                 "amount to scroll map when scroll_margin is reached")
     NHOPTC(scroll_margin, 20, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
                 "scroll map when this far from the edge")
+#ifdef USE_CHACHA
+    NHOPTC(seed, 64, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
+           "up to 64 hexadecimal [0-9A-F] characters, to play a set non-scoring dungeon")
+#endif
     NHOPTB(selectsaved, 0, opt_out, set_in_config, On, Yes, No, No, NoAlias,
                 &iflags.wc2_selectsaved)
     NHOPTB(showexp, 0, opt_in, set_in_game, Off, Yes, No, No, NoAlias,

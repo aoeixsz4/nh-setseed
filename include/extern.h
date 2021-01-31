@@ -240,6 +240,7 @@ extern char* key2txt(uchar, char *);
 extern char yn_function(const char *, const char *, char);
 extern boolean paranoid_query(boolean, const char *);
 extern void makemap_prepost(boolean, boolean);
+extern int wiz_rng(void);
 
 /* ### dbridge.c ### */
 
@@ -1818,6 +1819,7 @@ extern boolean msgtype_parse_add(char *);
 extern int msgtype_type(const char *, boolean);
 extern void hide_unhide_msgtypes(boolean, int);
 extern void msgtype_free(void);
+extern void get_printable_seed(char *);
 
 /* ### pager.c ### */
 
@@ -2142,8 +2144,10 @@ extern void genl_outrip(winid, int, time_t);
 
 /* ### rnd.c ### */
 
-extern void init_random(enum whichrng);
-extern void reseed_random(enum whichrng);
+extern void init_random(void);
+extern void hint_reseed_random(void);
+extern void save_rng_state(NHFILE *);
+extern void restore_rng_state(NHFILE *);
 extern int rng_rn2(enum whichrng, int);
 extern int rng_rnl(enum whichrng, int);
 extern int rng_rnd(enum whichrng, int);
@@ -2159,6 +2163,10 @@ extern int rng_rnz(enum whichrng, int);
 
 #define rng_rn1(rng, x, y) (rng_rn2(rng, x) + (y))
 #define rn1(x, y) rng_rn1(RNG_DEFAULT, x, y)
+
+extern rng_budget_t *create_rng_budget0(const char *, int, enum whichrng, long);
+#define create_rng_budget(rng, budget) create_rng_budget0(__FILE__, __LINE__, rng, budget)
+extern void destroy_rng_budget(rng_budget_t *);
 
 /* ### role.c ### */
 

@@ -187,7 +187,7 @@ extern void interject(int);
 #define USE_STDARG
 
 /* Use the high quality random number routines. */
-#ifdef USE_ISAAC64
+#ifdef USE_CHACHA
 #undef RANDOM
 #else
 #define RANDOM
@@ -195,7 +195,7 @@ extern void interject(int);
 #endif
 
 /* Fall back to C's if nothing else, but this really isn't acceptable */
-#if !defined(USE_ISAAC64) && !defined(RANDOM)
+#if !defined(USE_CHACHA) && !defined(RANDOM)
 #define Rand() rand()
 #endif
 

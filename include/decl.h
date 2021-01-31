@@ -636,20 +636,113 @@ struct _create_particular_data {
     boolean sleeping, saddled, invisible, hidden;
 };
 
+#ifdef USE_ISAAC64
+#include "isaac64.h"
+#endif
+
 /* rnd.c */
 
+/* Passed to all rng functions (whether explicitly or implicitly).
+
+   When USE_CHACHA is not defined, this is ignored -- RNG_DISP maps to a very weak LFSR; everything else maps to the
+   single system RNG. The state is not saved; it is reinitialised with new
+   entropy on every game load (TODO: and dungeon level change).
+
+   When USE_CHACHA is defined but setseed option is not set, there are only two
+   rngs: all rngs get mapped to RNG_CORE except RNG_DISP. (TODO: The state is not saved.)
+
+   When USE_CHACHA is defined and setseed option is set, all rngs are used and
+   their states saved in the savefile. (This adds ~4KB to the uncompressed
+   savefile, but it compresses down *very* well.)
+*/
 enum whichrng {
+    /* Used for random numbers during normal gameplay.
+    */
     RNG_CORE = 0,
 
-    /* a different sequence from the main rn2; used in cases where the answer
+    RNG_GAME_INIT,
+    RNG_U_INIT,
+
+    /* Special RNGs to control wishes */
+    RNG_DJINNI_FROM_BOTTLE,
+    RNG_FOUNTAIN,
+
+    /* A different sequence from the main rn2; used in cases where the answer
        doesn't affect gameplay and we don't want to give users easy control over
-       the main RNG sequence. */
+       the main RNG sequence.
+    */
     RNG_DISP,
+
+    /* Used during initial generation of each dungeon level only. This allows
+       for consistent dungeon generation in setseed mode.
+     */
+    RNG_DLVL_0,
+#define RNG_DLVL(d_level) (RNG_DLVL_0 + ledger_no(d_level))
+    /* ... */
+    RNG_DLVL_MAX = RNG_DLVL_0 + MAXLINFO,
 
     /* must be last; not actually a valid RNG */
     RNG_INDEX_MAX
 };
-#define RNG_DEFAULT RNG_CORE
+#define MAX_RNG_SEED_LEN 32
+#define RNG_DEFAULT g.default_rng
+
+#ifdef USE_CHACHA
+#include "integer.h"
+
+/* A given function can cause instability between runs of the same seed, by
+   advancing the RNG a different number of times, dependent on the past actions of a
+   player (the player's role, EXP, list of artifacts already created, etc).
+
+   A function can create an RNG budget to even out this instability. The
+   function specifies a constant upper-bound on the number of RNG calls it could
+   possibly make in *any* game, either directly or indirectly. (This should be a
+   hard-coded constant, not computed from any variables.) When the RNG budget is
+   destroyed at the end of the function, the RNG counter is advanced to make up
+   the shortfall. This causes the RNG to have been advanced by *exactly* the
+   upper-bound stated.
+
+   A corollary: if a function with an RNG budget calls another function that
+   also has its own budget, the calling function's budget needs to be at least
+   that of the callee's. (And double that if the callee is called twice, say.)
+
+   Because the Chacha PRNG allows seeking in constant time, it's fine for the
+   budget to be a gross overestimation. The position counter is a 64-bit
+   integer, so budgets should be lower than ~1 million (to avoid the RNG from
+   wrapping round in long games).
+
+   When an RNG budget is exceeded (the RNG is advanced more times than the
+   budget allowed for), this causes some transient desync, but has no other
+   harmful effects. The RNG keeps track of where it's budgeted to be at, and
+   will borrow from future budgets until the "debt" can be paid off, at which
+   point sync is restored. When RNG_DEBUG is defined, details of each budget
+   violation are shown.
+*/
+typedef struct rng_budget_t {
+    struct rng_budget_t *parent; /* rng budgets form a stack */
+    const char *file; /* used for debugging - where this budget was created */
+    int line;         /* used for debugging */
+    int depth;        /* used for debugging */
+    enum whichrng whichrng;
+    uint64_t budget; /* Specified by the caller */
+    uint64_t actual_count_direct;
+    uint64_t actual_count_indirect;
+} rng_budget_t;
+
+struct chacha_rng_t {
+    uint32_t buf[16];
+    boolean buf_valid;
+    uint64_t position;
+    uint64_t budgeted_position; /* Only used and updated in [destroy_rng_budget] */
+    rng_budget_t *rng_budget; /* the current top of the RNG budget stack */
+};
+
+#else
+
+typedef struct {
+} rng_budget_t;
+
+#endif /* USE_CHACHA */
 
 /* some array sizes for 'g' */
 #define BSIZE 20
@@ -1099,6 +1192,13 @@ struct instance_globals {
 
     /* rip.c */
     char **rip;
+
+    /* rnd.c */
+#ifdef USE_CHACHA
+    struct chacha_rng_t rngs[RNG_INDEX_MAX];
+    char seed[32];
+    int default_rng;
+#endif
 
     /* role.c */
     struct Role urole; /* player's role. May be munged in role_init() */

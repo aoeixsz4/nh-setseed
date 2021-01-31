@@ -320,11 +320,17 @@ rndmonnum(void)
     register struct permonst *ptr;
     register int i;
     unsigned short excludeflags;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     /* Plan A: get a level-appropriate common monster */
     ptr = rndmonst();
-    if (ptr)
+    if (ptr) {
+        g.default_rng = prev_default_rng;
         return monsndx(ptr);
+    }
 
     /* Plan B: get any common monster */
     excludeflags = G_UNIQ | G_NOGEN | (Inhell ? G_NOHELL : G_HELL);
@@ -333,6 +339,7 @@ rndmonnum(void)
         ptr = &mons[i];
     } while ((ptr->geno & excludeflags) != 0);
 
+    g.default_rng = prev_default_rng;
     return i;
 }
 
@@ -715,6 +722,7 @@ mksobj(int otyp, boolean init, boolean artif)
     int mndx, tryct;
     struct obj *otmp;
     char let = objects[otyp].oc_class;
+    enum whichrng prev_default_rng;
 
     otmp = newobj();
     *otmp = cg.zeroobj;
@@ -998,10 +1006,15 @@ mksobj(int otyp, boolean init, boolean artif)
             case STATUE:
                 /* possibly overridden by mkcorpstat() */
                 otmp->corpsenm = rndmonnum();
-                if (!verysmall(&mons[otmp->corpsenm])
-                    && rn2(level_difficulty() / 2 + 10) > 10)
+                /* rn2 must be called first for RNG stability (mons may vary) */
+                if (rn2(level_difficulty() / 2 + 10) > 10
+                    && !verysmall(&mons[otmp->corpsenm])) {
+                    prev_default_rng = g.default_rng;
+                    g.default_rng = RNG_CORE;
                     (void) add_to_container(otmp,
                                             mkobj(SPBOOK_no_NOVEL, FALSE));
+                    g.default_rng = prev_default_rng;
+                }
             }
             break;
         case COIN_CLASS:
@@ -1082,6 +1095,10 @@ void
 set_corpsenm(struct obj* obj, int id)
 {
     long when = 0L;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     if (obj->timed) {
         if (obj->otyp == EGG)
@@ -1111,6 +1128,8 @@ set_corpsenm(struct obj* obj, int id)
         obj->owt = weight(obj);
         break;
     }
+
+    g.default_rng = prev_default_rng;
 }
 
 /* Return the number of turns after which a Rider corpse revives */
@@ -1140,14 +1159,20 @@ start_corpse_timeout(struct obj* body)
     int rot_adjust;
     short action;
     boolean no_revival;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     /* if a troll corpse was frozen, it won't get a revive timer */
     no_revival = (body->norevive != 0);
     body->norevive = 0; /* always clear corpse's 'frozen' flag */
 
     /* lizards and lichen don't rot or revive */
-    if (body->corpsenm == PM_LIZARD || body->corpsenm == PM_LICHEN)
+    if (body->corpsenm == PM_LIZARD || body->corpsenm == PM_LICHEN) {
+        g.default_rng = prev_default_rng;
         return;
+    }
 
     action = ROT_CORPSE;             /* default action: rot away */
     rot_adjust = g.in_mklev ? 25 : 10; /* give some variation */
@@ -1177,6 +1202,8 @@ start_corpse_timeout(struct obj* body)
     }
 
     (void) start_timer(when, TIMER_OBJECT, action, obj_to_any(body));
+
+    g.default_rng = prev_default_rng;
 }
 
 static void

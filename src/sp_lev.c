@@ -3000,6 +3000,10 @@ lspo_monster(lua_State* L)
     monster tmpmons;
     int mx = -1, my = -1, mgend = NEUTRAL;
     char *mappear = NULL;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     create_des_coder();
 
@@ -3132,6 +3136,8 @@ lspo_monster(lua_State* L)
         spo_end_moninvent();
     } else
         lua_pop(L, 1);
+
+    g.default_rng = prev_default_rng;
 
     Free(tmpmons.name.str);
     Free(tmpmons.appear_as.str);

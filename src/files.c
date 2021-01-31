@@ -3661,7 +3661,7 @@ paniclog(const char *type,   /* panic, impossible, trickery */
 #else
             time_t now = getnow();
             int uid = getuid();
-            char playmode = wizard ? 'D' : discover ? 'X' : '-';
+            char playmode = wizard ? 'D' : discover ? 'X' : flags.setseed ? 'S' : '-';
 
             (void) fprintf(lfile, "%s %08ld %06ld %d %c: %s %s\n",
                            version_string(buf), yyyymmdd(now), hhmmss(now),

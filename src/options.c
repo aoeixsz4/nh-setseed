@@ -2964,6 +2964,79 @@ optfn_scroll_margin(int optidx, int req, boolean negated, char *opts, char *op)
     return optn_ok;
 }
 
+void
+get_printable_seed(char *out)
+{
+    int i, end;
+
+    /* elide trailing zeroes (but keep at least one) */
+    end = 32;
+    while (end > 1 && !g.seed[end-1]) end--;
+    for (i = 0; i < end; ++i) {
+        char ch = g.seed[i];
+        if (ch <= ' ' || ch >= '~' || ch == ',') {
+            *out++ = '\\';
+            *out++ = 'x';
+            out += sprintf(out, "%02x", (unsigned char) ch);
+        } else {
+            if (ch == '\\' || ch == '^') {
+                *out++ = '\\';
+            }
+            *out++ = ch;
+        }
+    }
+    *out = '\0';
+}
+
+#ifdef USE_CHACHA
+static int
+optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
+{
+    if (req == do_init) {
+        return optn_ok;
+    }
+    if (req == do_set) {
+        if (negated) {
+            flags.setseed = FALSE;
+            return optn_ok;
+        }
+        if ((op = string_for_env_opt(allopt[optidx].name, opts, FALSE))
+            != empty_optstr) {
+            int len;
+            escapes(op, op);
+            if ((len = strlen(op)) > MAX_RNG_SEED_LEN) {
+                config_error_add("%s parameter length (%d) too long: maximum %d characters",
+                                 allopt[optidx].name, len, MAX_RNG_SEED_LEN);
+                return optn_err;
+            }
+            strncpy(g.seed, op, sizeof(g.seed));
+            flags.setseed = TRUE;
+            return optn_ok;
+        } else {
+            return optn_silenterr;
+        }
+    }
+    if (req == get_val) {
+        if (!opts)
+            return optn_err;
+
+        if (!flags.setseed && !wizard) {
+            /* don't give away our secret seed, lest the player be able to clone
+            their current game to learn something they're not meant to know.
+            (but do allow seeing the seed in wizard mode, as it might come in
+            handy for debugging things) */
+            Sprintf1(opts, none);
+            return optn_ok;
+        }
+
+        get_printable_seed(opts);
+
+        return optn_ok;
+    }
+    return optn_ok;
+}
+#endif
+
 static int
 optfn_sortdiscoveries(int optidx, int req, boolean negated, char *opts, char *op)
 {
@@ -5657,10 +5730,6 @@ initoptions_init(void)
     /* set up the command parsing */
     reset_commands(TRUE); /* init */
 
-    /* initialize the random number generator(s) */
-    init_random(RNG_CORE);
-    init_random(RNG_DISP);
-
     for (i = 0; allopt[i].name; i++) {
         if (allopt[i].addr)
             *(allopt[i].addr) = allopt[i].initval;
@@ -5837,6 +5906,7 @@ initoptions_finish(void)
         }
     }
 #endif
+
     return;
 }
 

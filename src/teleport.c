@@ -1298,8 +1298,8 @@ rloc(
 
     trycount = 0;
     do {
-        x = rn1(COLNO - 3, 2);
-        y = rn2(ROWNO);
+        x = rng_rn1(RNG_CORE, COLNO - 3, 2);
+        y = rng_rn2(RNG_CORE, ROWNO);
         if ((trycount < 500) ? rloc_pos_ok(x, y, mtmp)
                              : goodpos(x, y, mtmp, 0))
             goto found_xy;

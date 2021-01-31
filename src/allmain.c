@@ -591,6 +591,10 @@ void
 newgame(void)
 {
     int i;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_GAME_INIT;
 
     g.context.botlx = TRUE;
     g.context.ident = 1;
@@ -605,16 +609,22 @@ newgame(void)
 
     init_objects(); /* must be before u_init() */
 
+    g.default_rng = RNG_U_INIT;
     flags.pantheon = -1; /* role_init() will reset this */
     role_init();         /* must be before init_dungeons(), u_init(),
                           * and init_artifacts() */
 
+    g.default_rng = RNG_GAME_INIT;
     init_dungeons();  /* must be before u_init() to avoid rndmonst()
                        * creating odd monsters for any tins and eggs
                        * in hero's initial inventory */
     init_artifacts(); /* before u_init() in case $WIZKIT specifies
                        * any artifacts */
+
+    g.default_rng = RNG_U_INIT;
     u_init();
+
+    g.default_rng = prev_default_rng;
 
 #ifndef NO_SIGNAL
     (void) signal(SIGINT, (SIG_RET_TYPE) done1);

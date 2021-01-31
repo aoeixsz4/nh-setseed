@@ -372,6 +372,7 @@ writexlentry(FILE* rfile, struct toptenentry* tt, int how)
     Fprintf(rfile, "%cwish_cnt=%ld", XLOG_SEP, u.uconduct.wishes);
     Fprintf(rfile, "%carti_wish_cnt=%ld", XLOG_SEP, u.uconduct.wisharti);
     Fprintf(rfile, "%cbones=%ld", XLOG_SEP, u.uroleplay.numbones);
+    Fprintf(rfile, "%cuser_seed=%d", XLOG_SEP, !!flags.setseed);
     Fprintf(rfile, "\n");
 #undef XLOG_SEP
 }
@@ -704,7 +705,7 @@ topten(int how, time_t when)
     }
 #endif /* XLOGFILE */
 
-    if (wizard || discover) {
+    if (wizard || discover || flags.setseed) {
         if (how != PANICKED)
             HUP {
                 char pbuf[BUFSZ];
@@ -712,7 +713,9 @@ topten(int how, time_t when)
                 topten_print("");
                 Sprintf(pbuf,
              "Since you were in %s mode, the score list will not be checked.",
-                        wizard ? "wizard" : "discover");
+                        wizard ? "wizard" :
+                        discover ? "discover" :
+                        "set seed");
                 topten_print(pbuf);
             }
         goto showwin;

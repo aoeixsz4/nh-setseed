@@ -1459,8 +1459,9 @@ goto_level(d_level *newlevel, boolean at_stairs, boolean falling, boolean portal
             /* we'll reach here if running in wizard mode */
             error("Cannot continue this game.");
         }
-        reseed_random(RNG_CORE);
-        reseed_random(RNG_DISP);
+
+        hint_reseed_random();
+
         minit(); /* ZEROCOMP */
         getlev(nhfp, g.hackpid, new_ledger);
         /* when in wizard mode, it is possible to leave from and return to

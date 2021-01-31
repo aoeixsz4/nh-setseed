@@ -1119,21 +1119,29 @@ makemon(register struct permonst *ptr,
             countbirth = ((mmflags & MM_NOCOUNTBIRTH) == 0),
             allowtail = ((mmflags & MM_NOTAIL) == 0);
     unsigned gpflags = (mmflags & MM_IGNOREWATER) ? MM_IGNOREWATER : 0;
+    enum whichrng prev_default_rng;
 
     fakemon = cg.zeromonst;
     cc.x = cc.y = 0;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     /* if caller wants random location, do it here */
     if (x == 0 && y == 0) {
         fakemon.data = ptr; /* set up for goodpos */
         if (!makemon_rnd_goodpos(ptr ? &fakemon : (struct monst *) 0,
-                                 gpflags, &cc))
+                                 gpflags, &cc)) {
+            g.default_rng = prev_default_rng;
             return (struct monst *) 0;
+        }
         x = cc.x;
         y = cc.y;
     } else if (byyou && !g.in_mklev) {
-        if (!enexto_core(&cc, u.ux, u.uy, ptr, gpflags))
+        if (!enexto_core(&cc, u.ux, u.uy, ptr, gpflags)) {
+            g.default_rng = prev_default_rng;
             return (struct monst *) 0;
+        }
         x = cc.x;
         y = cc.y;
     }
@@ -1141,14 +1149,17 @@ makemon(register struct permonst *ptr,
     /* sanity check */
     if (!isok(x, y)) {
         impossible("makemon trying to create a monster at <%d,%d>?", x, y);
+        g.default_rng = prev_default_rng;
         return (struct monst *) 0;
     }
 
     /* Does monster already exist at the position? */
     if (MON_AT(x, y)) {
         if (!(mmflags & MM_ADJACENTOK)
-            || !enexto_core(&cc, x, y, ptr, gpflags))
+            || !enexto_core(&cc, x, y, ptr, gpflags)) {
+            g.default_rng = prev_default_rng;
             return (struct monst *) 0;
+        }
         x = cc.x;
         y = cc.y;
     }
@@ -1157,8 +1168,10 @@ makemon(register struct permonst *ptr,
         mndx = monsndx(ptr);
         /* if you are to make a specific monster and it has
            already been genocided, return */
-        if (g.mvitals[mndx].mvflags & G_GENOD)
+        if (g.mvitals[mndx].mvflags & G_GENOD) {
+            g.default_rng = prev_default_rng;
             return (struct monst *) 0;
+        }
         if (wizard && (g.mvitals[mndx].mvflags & G_EXTINCT)) {
             debugpline1("Explicitly creating extinct monster %s.",
                         mons[mndx].pmnames[NEUTRAL]);
@@ -1174,6 +1187,7 @@ makemon(register struct permonst *ptr,
         do {
             if (!(ptr = rndmonst())) {
                 debugpline0("Warning: no monster.");
+                g.default_rng = prev_default_rng;
                 return (struct monst *) 0; /* no more monsters! */
             }
             fakemon.data = ptr; /* set up for goodpos */
@@ -1407,6 +1421,7 @@ makemon(register struct permonst *ptr,
     if (!g.in_mklev)
         newsym(mtmp->mx, mtmp->my); /* make sure the mon shows up */
 
+    g.default_rng = prev_default_rng;
     return mtmp;
 }
 
@@ -1541,9 +1556,15 @@ rndmonst(void)
     register int mndx;
     int weight, totalweight, selected_mndx, zlevel, minmlev, maxmlev;
     boolean elemlevel, upper;
+    enum whichrng prev_default_rng;
 
-    if (u.uz.dnum == quest_dnum && rn2(7) && (ptr = qt_montype()) != 0)
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
+
+    if (u.uz.dnum == quest_dnum && rn2(7) && (ptr = qt_montype()) != 0) {
+        g.default_rng = prev_default_rng;
         return ptr;
+    }
 
     zlevel = level_difficulty();
     minmlev = monmin_difficulty(zlevel);
@@ -1599,6 +1620,9 @@ rndmonst(void)
      * Possible modification:  if totalweight is "too low" or nothing
      * viable was picked, expand minmlev..maxmlev range and try again.
      */
+
+    g.default_rng = prev_default_rng;
+
     if (selected_mndx == NON_PM || uncommon(selected_mndx)) {
         /* maybe no common monsters left, or all are too weak or too strong */
         if (selected_mndx != NON_PM)
@@ -1648,11 +1672,16 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
     int k, nums[SPECIAL_PM + 1]; /* +1: insurance for final return value */
     int maxmlev, gehennom = Inhell != 0;
     unsigned mv_mask, gn_mask;
+    enum whichrng prev_default_rng;
+
+    prev_default_rng = g.default_rng;
+    g.default_rng = RNG_CORE;
 
     (void) memset((genericptr_t) nums, 0, sizeof nums);
     maxmlev = level_difficulty() >> 1;
     if (class < 1 || class >= MAXMCLASSES) {
         impossible("mkclass called with bad class!");
+        g.default_rng = prev_default_rng;
         return (struct permonst *) 0;
     }
     /*  Assumption #1:  monsters of a given class are contiguous in the
@@ -1666,6 +1695,7 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
             break;
     if (first == SPECIAL_PM) {
         impossible("mkclass found no class %d monsters", class);
+        g.default_rng = prev_default_rng;
         return (struct permonst *) 0;
     }
 
@@ -1717,8 +1747,10 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
             }
         }
     }
-    if (!num)
+    if (!num) {
+        g.default_rng = prev_default_rng;
         return (struct permonst *) 0;
+    }
 
     /* the hard work has already been done; 'num' should hit 0 before
        first reaches last (which is actually one past our last candidate) */
@@ -1726,6 +1758,7 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
         if ((num -= nums[first]) <= 0)
             break;
 
+    g.default_rng = prev_default_rng;
     return nums[first] ? &mons[first] : (struct permonst *) 0;
 }
 

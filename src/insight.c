@@ -264,6 +264,10 @@ enlightenment(int mode,  /* BASICENLIGHTENMENT | MAGICENLIGHTENMENT (| both) */
             Sprintf(buf, "running in %s mode", wizard ? "debug" : "explore");
             you_are(buf, "");
         }
+        if (flags.setseed) {
+            Sprintf(buf, "running with a set seed");
+            you_are(buf, "");
+        }
 
         if (!flags.bones) {
             you_have_X("disabled loading of bones levels");

@@ -53,6 +53,7 @@ struct flag {
     boolean rest_on_space;   /* space means rest */
     boolean safe_dog;        /* give complete protection to the dog */
     boolean safe_wait;       /* prevent wait or search next to hostile */
+    boolean setseed;         /* non-scoring manually set seed */
     boolean showexp;         /* show experience points */
     boolean showscore;       /* show score */
     boolean silent;          /* whether the bell rings or not */

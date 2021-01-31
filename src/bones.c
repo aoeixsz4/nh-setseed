@@ -333,7 +333,7 @@ can_make_bones(void)
         return FALSE;
     /* don't let multiple restarts generate multiple copies of objects
        in bones files */
-    if (discover)
+    if (discover || flags.setseed)
         return FALSE;
     return TRUE;
 }
@@ -541,7 +541,7 @@ getbones(void)
     NHFILE *nhfp = (NHFILE *) 0;
     char c = 0, *bonesid, oldbonesid[40]; /* was [10]; more should be safer */
 
-    if (discover) /* save bones files for real games */
+    if (discover || flags.setseed) /* save bones files for real games */
         return 0;
 
     if (!flags.bones)
