@@ -5658,8 +5658,8 @@ initoptions_init(void)
     reset_commands(TRUE); /* init */
 
     /* initialize the random number generator(s) */
-    init_random(rn2);
-    init_random(rn2_on_display_rng);
+    init_random(RNG_CORE);
+    init_random(RNG_DISP);
 
     for (i = 0; allopt[i].name; i++) {
         if (allopt[i].addr)

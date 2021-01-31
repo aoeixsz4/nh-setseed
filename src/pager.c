@@ -424,7 +424,7 @@ lookat(int x, int y, char *buf, char *monbuf)
     glyph = glyph_at(x, y);
     if (u.ux == x && u.uy == y && canspotself()
         && !(iflags.save_uswallow &&
-             glyph == mon_to_glyph(u.ustuck, rn2_on_display_rng))
+             glyph == mon_to_glyph(u.ustuck, RNG_DISP))
         && (!iflags.terrainmode || (iflags.terrainmode & TER_MON) != 0)) {
         /* fill in buf[] */
         (void) self_lookat(buf);

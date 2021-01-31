@@ -637,6 +637,21 @@ struct _create_particular_data {
     boolean sleeping, saddled, invisible, hidden;
 };
 
+/* rnd.c */
+
+enum whichrng {
+    RNG_CORE = 0,
+
+    /* a different sequence from the main rn2; used in cases where the answer
+       doesn't affect gameplay and we don't want to give users easy control over
+       the main RNG sequence. */
+    RNG_DISP,
+
+    /* must be last; not actually a valid RNG */
+    RNG_INDEX_MAX
+};
+#define RNG_DEFAULT RNG_CORE
+
 /* some array sizes for 'g' */
 #define BSIZE 20
 #define WIZKIT_MAX 128

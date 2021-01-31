@@ -2716,7 +2716,7 @@ launch_obj(
             delaycnt = 1;
         if (!cansee(g.bhitpos.x, g.bhitpos.y))
             curs_on_u();
-        tmp_at(DISP_FLASH, obj_to_glyph(singleobj, rn2_on_display_rng));
+        tmp_at(DISP_FLASH, obj_to_glyph(singleobj, RNG_DISP));
         tmp_at(g.bhitpos.x, g.bhitpos.y);
     }
     /* Mark a spot to place object in bones files to prevent
@@ -5883,7 +5883,7 @@ trapname(int ttyp, boolean override)
 
     if (Hallucination && !override) {
         int total_names = TRAPNUM + SIZE(halu_trapnames),
-            nameidx = rn2_on_display_rng(total_names + 1);
+            nameidx = rng_rn2(RNG_DISP, total_names + 1);
 
         if (nameidx == total_names) {
             boolean fem = Upolyd ? u.mfemale : flags.female;

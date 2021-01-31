@@ -734,7 +734,7 @@ randrole(boolean for_display)
     int res = SIZE(roles) - 1;
 
     if (for_display)
-        res = rn2_on_display_rng(res);
+        res = rng_rn2(RNG_DISP, res);
     else
         res = rn2(res);
     return res;

@@ -1547,7 +1547,7 @@ poly_obj(struct obj *obj, int id)
 
         /* now change it into something laid by the hero */
         while (tryct--) {
-            mnum = can_be_hatched(random_monster(rn2));
+            mnum = can_be_hatched(random_monster(RNG_DEFAULT));
             if (mnum != NON_PM && !dead_species(mnum, TRUE)) {
                 otmp->spe = 1;            /* laid by hero */
                 set_corpsenm(otmp, mnum); /* also sets hatch timer */
@@ -3299,9 +3299,9 @@ bhit(int ddx, int ddy, int range,  /* direction and range */
     } else if (weapon == THROWN_TETHERED_WEAPON && obj) {
         tethered_weapon = TRUE;
         weapon = THROWN_WEAPON; /* simplify 'if's that follow below */
-        tmp_at(DISP_TETHER, obj_to_glyph(obj, rn2_on_display_rng));
+        tmp_at(DISP_TETHER, obj_to_glyph(obj, RNG_DISP));
     } else if (weapon != ZAPPED_WAND && weapon != INVIS_BEAM)
-        tmp_at(DISP_FLASH, obj_to_glyph(obj, rn2_on_display_rng));
+        tmp_at(DISP_FLASH, obj_to_glyph(obj, RNG_DISP));
 
     while (range-- > 0) {
         int x, y;

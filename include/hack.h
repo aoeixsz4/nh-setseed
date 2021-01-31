@@ -553,8 +553,6 @@ enum optset_restrictions {
 #define distu(xx, yy) dist2((int)(xx), (int)(yy), (int) u.ux, (int) u.uy)
 #define onlineu(xx, yy) online2((int)(xx), (int)(yy), (int) u.ux, (int) u.uy)
 
-#define rn1(x, y) (rn2(x) + (y))
-
 /* negative armor class is randomly weakened to prevent invulnerability */
 #define AC_VALUE(AC) ((AC) >= 0 ? (AC) : -rnd(-(AC)))
 

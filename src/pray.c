@@ -2232,7 +2232,7 @@ halu_gname(aligntyp alignment)
         which = randrole(TRUE);
     while (!roles[which].lgod);
 
-    switch (rn2_on_display_rng(9)) {
+    switch (rng_rn2(RNG_DISP, 9)) {
     case 0:
     case 1:
         gnam = roles[which].lgod;
@@ -2247,7 +2247,7 @@ halu_gname(aligntyp alignment)
         break;
     case 6:
     case 7:
-        gnam = hallu_gods[rn2_on_display_rng(SIZE(hallu_gods))];
+        gnam = hallu_gods[rng_rn2(RNG_DISP, SIZE(hallu_gods))];
         break;
     case 8:
         gnam = Moloch;

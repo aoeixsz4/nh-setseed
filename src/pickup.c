@@ -971,7 +971,7 @@ query_objlist(const char *qstr,        /* query string */
                 }
 
                 any.a_obj = curr;
-                tmpglyph = obj_to_glyph(curr, rn2_on_display_rng);
+                tmpglyph = obj_to_glyph(curr, RNG_DISP);
                 map_glyphinfo(0, 0, tmpglyph, 0U, &tmpglyphinfo);
                 add_menu(win, &tmpglyphinfo, &any,
                          (qflags & USE_INVLET) ? curr->invlet
@@ -998,7 +998,7 @@ query_objlist(const char *qstr,        /* query string */
         fake_hero_object = cg.zeroobj;
         fake_hero_object.quan = 1L; /* not strictly necessary... */
         any.a_obj = &fake_hero_object;
-        tmpglyph = mon_to_glyph(&g.youmonst, rn2_on_display_rng);
+        tmpglyph = mon_to_glyph(&g.youmonst, RNG_DISP);
         map_glyphinfo(0, 0, tmpglyph, 0U, &tmpglyphinfo);
         add_menu(win, &tmpglyphinfo, &any,
                  /* fake inventory letter, no group accelerator */

@@ -2666,7 +2666,7 @@ create_particular_creation(struct _create_particular_data* d)
             if (!flags.sparkle)
                 count /= 2;
             g.viz_array[my][mx] |= (IN_SIGHT | COULD_SEE);
-            flash_glyph_at(mx, my, mon_to_glyph(mtmp, newsym_rn2), count);
+            flash_glyph_at(mx, my, mon_to_glyph(mtmp, RNG_NEWSYM), count);
             g.viz_array[my][mx] = saveviz;
             newsym(mx, my);
         }

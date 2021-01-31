@@ -2153,15 +2153,23 @@ extern void genl_outrip(winid, int, time_t);
 
 /* ### rnd.c ### */
 
-extern void init_random(int(*fn)(int));
-extern void reseed_random(int(*fn)(int));
-extern int rn2(int);
-extern int rn2_on_display_rng(int);
-extern int rnl(int);
-extern int rnd(int);
-extern int d(int, int);
-extern int rne(int);
-extern int rnz(int);
+extern void init_random(enum whichrng);
+extern void reseed_random(enum whichrng);
+extern int rng_rn2(enum whichrng, int);
+extern int rng_rnl(enum whichrng, int);
+extern int rng_rnd(enum whichrng, int);
+extern int rng_d(enum whichrng, int, int);
+extern int rng_rne(enum whichrng, int);
+extern int rng_rnz(enum whichrng, int);
+#define rn2(x) rng_rn2(RNG_DEFAULT, x)
+#define rnl(x) rng_rnl(RNG_DEFAULT, x)
+#define rnd(x) rng_rnd(RNG_DEFAULT, x)
+#define d(x, y) rng_d(RNG_DEFAULT, x, y)
+#define rne(x) rng_rne(RNG_DEFAULT, x)
+#define rnz(x) rng_rnz(RNG_DEFAULT, x)
+
+#define rng_rn1(rng, x, y) (rng_rn2(rng, x) + (y))
+#define rn1(x, y) rng_rn1(RNG_DEFAULT, x, y)
 
 /* ### role.c ### */
 
@@ -2201,7 +2209,7 @@ extern const char *Goodbye(void);
 /* ### rumors.c ### */
 
 extern char *getrumor(int, char *, boolean);
-extern char *get_rnd_text(const char *, char *, int(*)(int));
+extern char *get_rnd_text(const char *, char *, enum whichrng);
 extern void outrumor(int, int);
 extern void outoracle(boolean, boolean);
 extern void save_oracles(NHFILE *);

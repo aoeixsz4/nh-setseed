@@ -1250,7 +1250,7 @@ do_oname(register struct obj *obj)
         /* for "the Foo of Bar", only scuff "Foo of Bar" part */
         bufp = !strncmpi(bufcpy, "the ", 4) ? (buf + 4) : buf;
         do {
-            wipeout_text(bufp, rn2_on_display_rng(2), (unsigned) 0);
+            wipeout_text(bufp, rng_rn2(RNG_DISP, 2), (unsigned) 0);
         } while (!strcmp(buf, bufcpy));
         pline("While engraving, your %s slips.", body_part(HAND));
         display_nhwindow(WIN_MESSAGE, FALSE);
@@ -1584,7 +1584,7 @@ namefloorobj(void)
 
            note: the 30 is hardcoded in xlev_to_rank, so should be
            hardcoded here too */
-        unames[1] = rank_of(rn2_on_display_rng(30) + 1,
+        unames[1] = rank_of(rng_rn2(RNG_DISP, 30) + 1,
                             Role_switch, flags.female);
         /* random fake monster */
         unames[2] = bogusmon(tmpbuf, (char *) 0);
@@ -1596,7 +1596,7 @@ namefloorobj(void)
         unames[5] = "Wibbly Wobbly";
         pline("%s %s to call you \"%s.\"",
               The(buf), use_plural ? "decide" : "decides",
-              unames[rn2_on_display_rng(SIZE(unames))]);
+              unames[rng_rn2(RNG_DISP, SIZE(unames))]);
     } else if (!call_ok(obj)) {
         pline("%s %s can't be assigned a type name.",
               use_plural ? "Those" : "That", buf);
@@ -2096,7 +2096,7 @@ bogusmon(char *buf, char *code)
     if (code)
         *code = '\0';
     /* might fail (return empty buf[]) if the file isn't available */
-    get_rnd_text(BOGUSMONFILE, buf, rn2_on_display_rng);
+    get_rnd_text(BOGUSMONFILE, buf, RNG_DISP);
     if (!*mnam) {
         Strcpy(buf, "bogon");
     } else if (index(bogon_codes, *mnam)) { /* strip prefix if present */
@@ -2120,14 +2120,14 @@ rndmonnam(char *code)
         *code = '\0';
 
     do {
-        name = rn2_on_display_rng(SPECIAL_PM + BOGUSMONSIZE - LOW_PM) + LOW_PM;
+        name = rng_rn2(RNG_DISP, SPECIAL_PM + BOGUSMONSIZE - LOW_PM) + LOW_PM;
     } while (name < SPECIAL_PM
              && (type_is_pname(&mons[name]) || (mons[name].geno & G_NOGEN)));
 
     if (name >= SPECIAL_PM) {
         mnam = bogusmon(buf, code);
     } else {
-        mnam = strcpy(buf, pmname(&mons[name], rn2_on_display_rng(2)));
+        mnam = strcpy(buf, pmname(&mons[name], rng_rn2(RNG_DISP, 2)));
     }
     return mnam;
 #undef BOGUSMONSIZE
@@ -2176,7 +2176,7 @@ const char *
 hcolor(const char *colorpref)
 {
     return (Hallucination || !colorpref)
-        ? hcolors[rn2_on_display_rng(SIZE(hcolors))]
+        ? hcolors[rng_rn2(RNG_DISP, SIZE(hcolors))]
         : colorpref;
 }
 
@@ -2213,7 +2213,7 @@ hliquid(const char *liquidpref) /* use as-is when not hallucinating (unless empt
            among the choices */
         if (liquidpref && *liquidpref)
             ++count;
-        indx = rn2_on_display_rng(count);
+        indx = rng_rn2(RNG_DISP, count);
         if (indx < SIZE(hliquids))
             return hliquids[indx];
     }

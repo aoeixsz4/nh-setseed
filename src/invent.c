@@ -2590,7 +2590,7 @@ display_pickinv(register const char *lets,
                 any.a_obj = otmp;
             else
                 any.a_char = ilet;
-            tmpglyph = obj_to_glyph(otmp, rn2_on_display_rng);
+            tmpglyph = obj_to_glyph(otmp, RNG_DISP);
             map_glyphinfo(0, 0, tmpglyph, 0U, &tmpglyphinfo);            
             add_menu(win, &tmpglyphinfo, &any, ilet,
                      wizid ? def_oc_syms[(int) otmp->oclass].sym : 0,
@@ -2711,7 +2711,7 @@ display_used_invlets(char avoidlet)
                         classcount++;
                     }
                     any.a_char = ilet;
-                    tmpglyph = obj_to_glyph(otmp, rn2_on_display_rng);
+                    tmpglyph = obj_to_glyph(otmp, RNG_DISP);
                     map_glyphinfo(0, 0, tmpglyph, 0U, &tmpglyphinfo);
                     add_menu(win, &tmpglyphinfo, &any, ilet, 0,
                              ATR_NONE, doname(otmp), MENU_ITEMFLAGS_NONE);
