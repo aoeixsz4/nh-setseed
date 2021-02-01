@@ -41,6 +41,7 @@ des.region({ region={16,04, 18,06}, lit=1, type="tool shop", filled=1 })
 des.region({ region={23,01, 25,03}, lit=1, type="shop", filled=1 })
 des.region({ region={22,12, 24,13}, lit=1, type=monkfoodshop(), filled=1 })
 des.region({ region={31,12, 36,14}, lit=1, type="temple", filled=1 })
+align = shuffled_aligns()
 des.altar({ x=35,y=13,align=align[1],type="shrine"})
 
 des.door("closed",5,2)
