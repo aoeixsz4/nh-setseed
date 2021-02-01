@@ -146,6 +146,7 @@ des.room({ type="ordinary", lit=1, x=3,y=3,
               des.room({ type="temple", lit=1, x=24,y=6, w=4,h=4,
                          contents = function()
                             des.door({ state = "closed", wall = "west" })
+                            align = shuffled_aligns()
                             des.altar({ x=02, y=01, align=align[1], type="shrine" })
                             des.monster("gnomish wizard")
                             des.monster("gnomish wizard")

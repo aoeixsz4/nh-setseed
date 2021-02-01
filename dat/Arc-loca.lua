@@ -65,6 +65,7 @@ des.door("closed",54,15)
 des.stair("up", 03,17)
 des.stair("down", 39,10)
 -- Altars - three types.  All are unattended.
+align = shuffled_aligns()
 des.altar({ x=26,y=05,align=align[1], type="altar" })
 des.altar({ x=26,y=10,align=align[2], type="altar" })
 des.altar({ x=26,y=15,align=align[3], type="altar" })

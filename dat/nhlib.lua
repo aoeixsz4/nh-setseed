@@ -19,8 +19,11 @@ function shuffle(list)
    end
 end
 
-align = { "law", "neutral", "chaos" };
-shuffle(align);
+function shuffled_aligns()
+    local align = { "law", "neutral", "chaos" };
+    shuffle(align);
+    return align;
+end
 
 -- d(2,6) = 2d6
 -- d(20) = 1d20 (single argument = implicit 1 die)

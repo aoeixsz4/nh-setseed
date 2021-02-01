@@ -216,6 +216,7 @@ themerooms = {
    function()
       des.room({ type = "themed",
                  contents = function()
+                    align = shuffled_aligns()
                     des.altar({ align = align[1] });
                     des.altar({ align = align[2] });
                     des.altar({ align = align[3] });
