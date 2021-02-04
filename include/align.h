@@ -35,9 +35,9 @@ typedef struct align { /* alignment & record */
 #define AM_SHRINE 8
 
 /* special level flags, gone by the time the level has been loaded */
-#define AM_SPLEV_CO     3 /* co-aligned: force alignment to match hero's  */
-#define AM_SPLEV_NONCO  7 /* non-co-aligned: force alignment to not match */
-#define AM_SPLEV_RANDOM 8
+#define A_SPLEV_CO     3 /* co-aligned: force alignment to match hero's  */
+#define A_SPLEV_NONCO  7 /* non-co-aligned: force alignment to not match */
+#define A_SPLEV_RANDOM 8
 
 #define Amask2align(x) \
     ((aligntyp) ((((x) & AM_MASK) == 0) ? A_NONE                \

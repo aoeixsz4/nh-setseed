@@ -1777,11 +1777,11 @@ create_monster(monster* m, struct mkroom* croom)
     if (class == MAXMCLASSES)
         panic("create_monster: unknown monster class '%c'", m->class);
 
-    amask = (m->align == AM_SPLEV_CO)
+    amask = (m->align == A_SPLEV_CO)
                ? Align2amask(u.ualignbase[A_ORIGINAL])
-               : (m->align == AM_SPLEV_NONCO)
+               : (m->align == A_SPLEV_NONCO)
                   ? Align2amask(noncoalignment(u.ualignbase[A_ORIGINAL]))
-                  : (m->align == AM_SPLEV_RANDOM)
+                  : (m->align == A_SPLEV_RANDOM)
                      ? induced_align(80)
                      : Align2amask(m->align);
 
@@ -1823,7 +1823,7 @@ create_monster(monster* m, struct mkroom* croom)
     if (croom && !inside_room(croom, x, y))
         return;
 
-    if (m->align != AM_SPLEV_RANDOM)
+    if (m->align != A_SPLEV_RANDOM)
         mtmp = mk_roamer(pm, Amask2align(amask), x, y, m->peaceful);
     else if (PM_ARCHEOLOGIST <= m->id && m->id <= PM_WIZARD)
         mtmp = mk_mplayer(pm, x, y, FALSE);
@@ -2289,11 +2289,11 @@ create_altar(altar* a, struct mkroom* croom)
      * values to avoid conflicting with the rest of the encoding,
      * shared by many other parts of the special level code.
      */
-    amask = (a->align == AM_SPLEV_CO)
+    amask = (a->align == A_SPLEV_CO)
                ? Align2amask(u.ualignbase[A_ORIGINAL])
-               : (a->align == AM_SPLEV_NONCO)
+               : (a->align == A_SPLEV_NONCO)
                   ? Align2amask(noncoalignment(u.ualignbase[A_ORIGINAL]))
-                  : (a->align == AM_SPLEV_RANDOM)
+                  : (a->align == A_SPLEV_RANDOM)
                      ? induced_align(80)
                      : Align2amask(a->align);
 
@@ -2910,8 +2910,8 @@ get_table_align(lua_State* L)
         "coaligned", "noncoaligned", "random", NULL
     };
     static const int aligns2i[] = {
-        AM_NONE, AM_LAWFUL, AM_NEUTRAL, AM_CHAOTIC,
-        AM_SPLEV_CO, AM_SPLEV_NONCO, AM_SPLEV_RANDOM, 0
+        A_NONE, A_LAWFUL, A_NEUTRAL, A_CHAOTIC,
+        A_SPLEV_CO, A_SPLEV_NONCO, A_SPLEV_RANDOM, 0
     };
 
     int a = aligns2i[get_table_option(L, "align", "random", gtaligns)];
@@ -3008,7 +3008,7 @@ lspo_monster(lua_State* L)
     tmpmons.name.str = NULL;
     tmpmons.appear = 0;
     tmpmons.appear_as.str = (char *) 0;
-    tmpmons.align = AM_SPLEV_RANDOM;
+    tmpmons.align = A_SPLEV_RANDOM;
     tmpmons.female = 0;
     tmpmons.invis = 0;
     tmpmons.cancelled = 0;
