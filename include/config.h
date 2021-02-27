@@ -607,8 +607,12 @@ typedef unsigned char uchar;
 #define EXTRAINFO_FN    "/dgldir/extrainfo-nh370/%n.extrainfo"
 #define MAILCKFREQ 5    /* SIMPLE_MAIL is in unixconf.h */
 #define WHEREIS_FILE    "whereis/%n.whereis" /* Write out player's current location to player.whereis */
+#endif /* DGAMELAUNCH */
 
-/* Live-logging - not particularly experimental, but very optional */
+/* Live-logging - not particularly experimental, but very optional
+   this was previously nested within #ifdef DGAMELAUNCH. However,
+   there are plenty of legitimate reasons to want a livelog file but
+   not run dgl or build support for it. */
 /* #define LIVELOG_ENABLE */
 #ifdef LIVELOG_ENABLE
 #define LIVELOGFILE "livelog" /* in-game events recorded live */
@@ -618,8 +622,6 @@ typedef unsigned char uchar;
 #define LIVELOG_DETAIL 0xFF
 #endif
 #endif /* LIVELOG_ENABLE */
-
-#endif /* DGAMELAUNCH */
 
 /* #define DUMPLOG */  /* End-of-game dump logs */
 /* #define DUMPHTML */ /* End-of-game HTML dumps */
