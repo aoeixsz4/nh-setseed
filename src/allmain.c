@@ -716,6 +716,14 @@ welcome(boolean new_game) /* false => restoring an old game */
                    : "%s %s, the%s %s %s, welcome back to NetHack!",
           Hello((struct monst *) 0), g.plname, buf, g.urace.adj,
           (currentgend && g.urole.name.f) ? g.urole.name.f : g.urole.name.m);
+    
+#ifdef LIVELOGFILE
+    if (new_game) {
+        livelog_write_string(LL_START, "entered the Dungeons of Doom");
+    } else {
+        livelog_write_string(LL_DEBUG, "resumed save");
+    }
+#endif
 }
 
 #ifdef POSITIONBAR

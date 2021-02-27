@@ -457,6 +457,7 @@ struct savefile_info {
 #define LL_DUMP_ASC   0x0400 /* Log URL for dumplog if ascended */
 #define LL_DUMP_ALL   0x0800 /* Log dumplog url for all games */
 #define LL_MINORAC    0x1000 /* Log 'minor' achievements - can be spammy */
+#define LL_START      0x2000 /* Log game start */
 #define LL_DEBUG      0x8000 /* For debugging messages and other spam */
 
 #endif /* GLOBAL_H */
