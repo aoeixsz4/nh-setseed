@@ -373,6 +373,11 @@ writexlentry(FILE* rfile, struct toptenentry* tt, int how)
     Fprintf(rfile, "%carti_wish_cnt=%ld", XLOG_SEP, u.uconduct.wisharti);
     Fprintf(rfile, "%cbones=%ld", XLOG_SEP, u.uroleplay.numbones);
     Fprintf(rfile, "%cuser_seed=%d", XLOG_SEP, !!flags.setseed);
+#ifdef USE_CHACHA
+    char seedbuf_tmp[MAX_RNG_SEED_LEN*4+1];
+    get_printable_seed(seedbuf_tmp);
+    Fprintf(rfile, "%cseed=%s", XLOG_SEP, seedbuf_tmp);
+#endif
     Fprintf(rfile, "\n");
 #undef XLOG_SEP
 }
