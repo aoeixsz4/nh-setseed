@@ -4675,7 +4675,7 @@ const char *buffer;
                      genders[flags.female].filecode, LLOG_SEP,
                      aligns[1-u.ualign.type].filecode, LLOG_SEP,
                      g.moves, LLOG_SEP,
-                     urealtime.realtime, LLOG_SEP,
+                     urealtime.realtime + (getnow() - urealtime.start_timing), LLOG_SEP,
                      (long)ubirthday, LLOG_SEP,
                      (long)time(NULL), LLOG_SEP,
                      msgbuf);
@@ -4688,7 +4688,7 @@ const char *buffer;
                      genders[flags.female].filecode, LLOG_SEP,
                      aligns[1-u.ualign.type].filecode, LLOG_SEP,
                      g.moves, LLOG_SEP,
-                     urealtime.realtime, LLOG_SEP,
+                     urealtime.realtime + (getnow() - urealtime.start_timing), LLOG_SEP,
                      (long)ubirthday, LLOG_SEP,
                      (long)time(NULL), LLOG_SEP,
                      msgbuf);
