@@ -733,6 +733,18 @@ dump_everything(int how,
     putstr(0, ATR_SUBHEAD, pbuf);
     putstr(NHW_DUMPTXT, 0, "");
 
+#ifdef USE_CHACHA
+    /* add seed information */
+    char seedbuf_tmp[MAX_RNG_SEED_LEN*4+1];
+    get_printable_seed(seedbuf_tmp);
+    Sprintf(pbuf, flags.setseed
+                ? "Player chosen seed: %s"
+                : "Randomly chosen seed: %s",
+            seedbuf_tmp);
+    putstr(0, ATR_SUBHEAD, pbuf);
+    putstr(NHW_DUMPTXT, 0, "");
+#endif
+
     /* character name and basic role info */
     Sprintf(pbuf, "%s, %s %s %s %s", g.plname,
             aligns[1 - u.ualign.type].adj,
