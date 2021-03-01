@@ -4663,6 +4663,7 @@ const char *buffer;
             }
 
 #ifdef USE_CHACHA
+            if (flags.setseed) {
             char seedbuf_tmp[MAX_RNG_SEED_LEN*4+1];
             get_printable_seed(seedbuf_tmp);
             snprintf(tmpbuf, 1024, "lltype=%d%cuser_seed=%u%cseed=%s%cplayer=%s%crole=%s%crace=%s%cgender=%s%calign=%s%cturns=%ld%crealtime=%ld%cstarttime=%ld%ccurtime=%ld%cmessage=%s\n",
@@ -4679,7 +4680,8 @@ const char *buffer;
                      (long)ubirthday, LLOG_SEP,
                      (long)time(NULL), LLOG_SEP,
                      msgbuf);
-#else
+            } else {
+#endif
             snprintf(tmpbuf, 1024, "lltype=%d%cplayer=%s%crole=%s%crace=%s%cgender=%s%calign=%s%cturns=%ld%crealtime=%ld%cstarttime=%ld%ccurtime=%ld%cmessage=%s\n",
                      (ll_type & sysopt.livelog), LLOG_SEP,
                      g.plname, LLOG_SEP,
@@ -4692,6 +4694,8 @@ const char *buffer;
                      (long)ubirthday, LLOG_SEP,
                      (long)time(NULL), LLOG_SEP,
                      msgbuf);
+#ifdef USE_CHACHA
+            }
 #endif
             fprintf(livelogfile, "%s", tmpbuf);
             (void) fclose(livelogfile);
