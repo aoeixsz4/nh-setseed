@@ -13,18 +13,18 @@ NAO_CHROOT="/opt/nethack/chroot"
 DGL_CONFIG="/opt/nethack/dgamelaunch.conf"
 # already compiled versions of dgl and nethack
 DGL_GIT="/home/build/dgamelaunch"
-NETHACK_GIT="/home/build/NetHack37"
+NETHACK_GIT="/home/build/setseed"
 # the user & group from dgamelaunch config file.
 USRGRP="games:games"
 # COMPRESS from include/config.h; the compression binary to copy. leave blank to skip.
 COMPRESSBIN="/bin/gzip"
 # fixed data to copy (leave blank to skip)
-NH_GIT="/home/build/NetHack37"
-NH_BRANCH="3.7-hdf" # will probably need to make another hdf branch for this one
+NH_GIT="/home/build/setseed"
+NH_BRANCH="setseed-hdf" # will probably need to make another hdf branch for this one
 # HACKDIR from include/config.h; aka nethack subdir inside chroot
-NHSUBDIR="nh370.30-hdf"
+NHSUBDIR="setseed"
 # VAR_PLAYGROUND from include/unixconf.h
-NH_VAR_PLAYGROUND="/nh370.30-hdf/var/"
+NH_VAR_PLAYGROUND="/setseed/var/"
 # only define this if dgl was configured with --enable-sqlite
 SQLITE_DBFILE="/dgldir/dgamelaunch.db"
 # END OF CONFIG
@@ -51,10 +51,10 @@ set -e
 umask 022
 
 echo "Creating inprogress and extrainfo directories"
-mkdir -p "$NAO_CHROOT/dgldir/inprogress-nh370.30-hdf"
-chown "$USRGRP" "$NAO_CHROOT/dgldir/inprogress-nh370.30-hdf"
-mkdir -p "$NAO_CHROOT/dgldir/extrainfo-nh370"
-chown "$USRGRP" "$NAO_CHROOT/dgldir/extrainfo-nh370"
+mkdir -p "$NAO_CHROOT/dgldir/inprogress-seed"
+chown "$USRGRP" "$NAO_CHROOT/dgldir/inprogress-seed"
+mkdir -p "$NAO_CHROOT/dgldir/extrainfo-seed"
+chown "$USRGRP" "$NAO_CHROOT/dgldir/extrainfo-seed"
 
 echo "Making $NAO_CHROOT/$NHSUBDIR"
 mkdir -p "$NAO_CHROOT/$NHSUBDIR"
