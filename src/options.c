@@ -293,6 +293,11 @@ static boolean illegal_menu_cmd_key(uchar);
 extern int curses_read_attrs(const char *attrs);
 extern char *curses_fmt_attrs(char *);
 #endif
+#ifdef USE_CHACHA
+#include "chacha.h"
+#include <b64/cencode.h>
+#include <b64/cdecode.h>
+#endif
 
 /*
  **********************************
@@ -3121,34 +3126,49 @@ optfn_scroll_margin(int optidx, int req, boolean negated, char *opts, char *op)
     return optn_ok;
 }
 
+#ifdef USE_CHACHA
 void
 get_printable_seed(char *out)
 {
-    int i, end;
-
-    /* elide trailing zeroes (but keep at least one) */
-    end = 32;
-    while (end > 1 && !g.seed[end-1]) end--;
-    for (i = 0; i < end; ++i) {
-        char ch = g.seed[i];
-        if (ch <= ' ' || ch >= '~' || ch == ',') {
-            *out++ = '\\';
-            *out++ = 'x';
-            out += sprintf(out, "%02x", (unsigned char) ch);
-        } else {
-            if (ch == '\\' || ch == '^') {
-                *out++ = '\\';
-            }
-            *out++ = ch;
-        }
+    int i, len_encoded, len_decoded;
+    base64_encodestate encoder;
+    base64_init_encodestate(&encoder);
+    // g.seed should be treated as null-padded, not null-terminated for this,
+    // otherwise a seed containing data after null will not be preserved
+    // by encoding and reencoding
+    len_encoded = sizeof(g.seed);
+    while (len_encoded > 0 && g.seed[len_encoded - 1] == 0) {
+        len_encoded--;
     }
-    *out = '\0';
+    if (len_encoded > 0) {
+        len_decoded = base64_encode_block(g.seed, len_encoded, out, &encoder);
+        // I think we can get away with simply not padding our base64
+        //len_decoded += base64_encode_blockend((out+len_decoded), &encoder);
+        out[len_decoded] = 0;
+        // remove trailing newline
+        if (out[len_decoded-1] == '\n') {
+            out[len_decoded-1] = 0;
+            len_decoded--;
+        }
+        /*// '=' padding messes with livelogs and config file, so change these to '_'
+        for (i = len_decoded - 2; i < len_decoded; i++) {
+            if (out[i] == '=') {
+                out[i] = '_';
+            }
+        }*/
+    } else {
+        // fail - output is empty null-terminated string
+        *out = 0;
+    }
 }
 
-#ifdef USE_CHACHA
 static int
 optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
 {
+    int i, len_encoded, len_decoded;
+    char seed_tmp[MAX_RNG_SEED_LEN + 1];
+    base64_decodestate decoder;
+
     if (req == do_init) {
         return optn_ok;
     }
@@ -3159,14 +3179,37 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
         }
         if ((op = string_for_env_opt(allopt[optidx].name, opts, FALSE))
             != empty_optstr) {
-            int len;
-            escapes(op, op);
-            if ((len = strlen(op)) > MAX_RNG_SEED_LEN) {
+            // instead of copying the configured seed directly, treat it as
+            // base64-encoded and decode it for the actual seed
+            len_encoded = strlen(op);
+            if (len_encoded > MAX_B64_RNG_SEED_LEN) {
                 config_error_add("%s parameter length (%d) too long: maximum %d characters",
-                                 allopt[optidx].name, len, MAX_RNG_SEED_LEN);
+                                 allopt[optidx].name, len_encoded, MAX_B64_RNG_SEED_LEN);
                 return optn_err;
             }
-            strncpy(g.seed, op, sizeof(g.seed));
+            for (i = 0; i < len_encoded; ++i) {
+                if (op[i] == '_') {
+                    op[i] = '=';
+                }
+                if (!is_valid_b64(op[i]) {
+                    config_error_add("'%c' is invalid: base64 encoded seed expeted", op[i]);
+                    return optn_err;
+                }
+            }
+            /*char op_tmp[MAX_RNG_SEED_LEN + 1];
+            strncpy(op_tmp, op, len_encoded);
+            // padding by hand on input might not actually be necessary
+            for (int padding = len_encoded % 3; padding; padding--) {
+                op_tmp[len_encoded++] = '=';
+            }
+            op_tmp[len_encoded] = 0;*/
+            base64_init_decodestate(&decoder);
+            len_decoded = base64_decode_block(op, len_encoded, seed_tmp, &decoder);
+            strncpy(g.seed, seed_tmp, sizeof(g.seed));
+            // pad with 0s if len_decoded < sizeof(g.seed)
+            for (i = len_decoded; i < sizeof(g.seed); i++) {
+                g.seed[i] = 0;
+            }
             flags.setseed = TRUE;
             return optn_ok;
         } else {

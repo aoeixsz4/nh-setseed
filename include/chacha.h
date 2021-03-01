@@ -33,4 +33,7 @@
  */
 void chacha_8rounds_prng(uint32_t output[16], const uint8_t seed[32], uint64_t stream_id, uint64_t pos);
 
+#define is_valid_b64(c) (('A' <= c && c <= 'z') || ('0' <= c && c <= '9') \
+                                    || c == '+' || c == '/') // technically '=' is valid padding, but it causes problems elsewhere
+
 #endif

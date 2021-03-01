@@ -738,6 +738,8 @@ struct chacha_rng_t {
     rng_budget_t *rng_budget; /* the current top of the RNG budget stack */
 };
 
+#define MAX_B64_RNG_SEED_LEN ((MAX_RNG_SEED_LEN * 8) / 6)
+
 #else
 
 typedef struct {
