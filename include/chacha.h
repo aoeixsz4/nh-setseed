@@ -32,5 +32,6 @@
      a performance tradeoff)
  */
 void chacha_8rounds_prng(uint32_t output[16], const uint8_t seed[32], uint64_t stream_id, uint64_t pos);
-
+size_t b64_encode(char *src, char *dest, size_t src_len);
+size_t b64_decode(char *src, char *dest, size_t src_len);
 #endif

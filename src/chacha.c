@@ -63,3 +63,118 @@ void chacha_8rounds_prng(uint32_t output[16], const uint8_t seed[32], uint64_t s
   }
   for (i = 0;i < 16;++i) output[i] = PLUS(x[i],input[i]);
 }
+
+static const unsigned char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+#define fill_bits(n) ((1 << n) - 1)
+#define SEXTET 6
+#define OCTET  8
+
+/* pass only valid b64 chars */
+unsigned char
+reverse_b64_table(unsigned char c)
+{
+    int i;
+    for (i = 0; i < strlen(b64_table); i++) {
+        if (b64_table[i] == c) {
+            return i;
+        }
+    }
+    /* should not happen */
+    return 255;
+}
+
+size_t
+b64_decode(char *src_s, char *dest, size_t len)
+{
+  size_t src_index, dest_index, dest_bitdex, b64_bitdex, shift, bits_wanted, bits_avail;
+  unsigned char b64_val, u8_val, mask;
+
+  /* probably easier to work with unsigned here */
+  unsigned char *src = (unsigned char *) src_s;
+
+  src_index = dest_index = dest_bitdex = b64_bitdex = 0;
+  u8_val = b64_val = 0;
+  while (src_index < len || b64_bitdex) {
+    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
+    if (!b64_bitdex) {
+        if (src[src_index] == '=') {
+            break;
+        }
+        b64_val = reverse_b64_table(src[src_index++]);
+    }
+
+    bits_wanted = OCTET - dest_bitdex;
+    bits_avail  = SEXTET - b64_bitdex;
+
+    if (bits_avail >= bits_wanted) {
+      shift = bits_avail - bits_wanted;
+      mask = fill_bits(bits_wanted) << shift;
+      u8_val |= (b64_val & mask) >> shift;
+      b64_bitdex += bits_wanted;
+      if (b64_bitdex == SEXTET) {
+          b64_bitdex = 0;
+      }
+      dest_bitdex = 0;
+      dest[dest_index++] = u8_val;
+      u8_val = 0;
+    } else {
+      shift = bits_wanted - bits_avail;
+      u8_val |= (b64_val & fill_bits(bits_avail)) << shift;
+      dest_bitdex += bits_avail;
+      b64_bitdex = 0;
+    }
+  }
+  if (dest_bitdex) {
+      dest[dest_index++] = u8_val;
+  }
+  dest[dest_index] = 0;
+  return dest_index;
+}
+
+/* this one assumes you better have correct data you scrubbins */
+/* no padding '=' characters are added at the end */ 
+size_t
+b64_encode(char *src_s, char *dest, size_t len)
+{
+  size_t src_index, dest_index, src_bitdex, b64_bitdex, shift, bits_wanted, bits_avail;
+  unsigned char b64_val, u8_val, mask;
+
+  /* probably easier to work with unsigned here */
+  unsigned char *src = (unsigned char *) src_s;
+
+  src_index = dest_index = src_bitdex = b64_bitdex = 0;
+  u8_val = b64_val = 0;
+  while (src_index < len || src_bitdex) {
+    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
+    if (!src_bitdex) {
+        u8_val = src[src_index++];
+    }
+
+    bits_wanted = SEXTET - b64_bitdex;
+    bits_avail  = OCTET - src_bitdex;
+
+    if (bits_avail >= bits_wanted) {
+      shift = bits_avail - bits_wanted;
+      mask = fill_bits(bits_wanted) << shift;
+      b64_val |= (u8_val & mask) >> shift;
+      src_bitdex += bits_wanted;
+      if (src_bitdex == OCTET) {
+          src_bitdex = 0;
+      }
+      dest[dest_index++] = b64_table[b64_val];
+      b64_val = 0;
+      b64_bitdex = 0;
+    } else {
+      shift = bits_wanted - bits_avail;
+      b64_val |= (u8_val & fill_bits(bits_avail)) << shift;
+      b64_bitdex += bits_avail;
+      src_bitdex = 0;
+    }
+  }
+  if (b64_bitdex) {
+      dest[dest_index++] = b64_table[b64_val];
+  }
+  dest[dest_index++] = 0;
+  return dest_index;
+}

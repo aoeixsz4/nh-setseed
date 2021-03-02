@@ -3121,31 +3121,22 @@ optfn_scroll_margin(int optidx, int req, boolean negated, char *opts, char *op)
     return optn_ok;
 }
 
+#ifdef USE_CHACHA
 void
 get_printable_seed(char *out)
 {
-    int i, end;
-
-    /* elide trailing zeroes (but keep at least one) */
-    end = 32;
-    while (end > 1 && !g.seed[end-1]) end--;
-    for (i = 0; i < end; ++i) {
-        char ch = g.seed[i];
-        if (ch <= ' ' || ch >= '~' || ch == ',') {
-            *out++ = '\\';
-            *out++ = 'x';
-            out += sprintf(out, "%02x", (unsigned char) ch);
-        } else {
-            if (ch == '\\' || ch == '^') {
-                *out++ = '\\';
-            }
-            *out++ = ch;
-        }
+    char tmp_buf[MAX_RNG_SEED_LEN + 1];
+    size_t len;
+    len = sizeof(g.seed);
+    /* treating the seed as null-terminated would be incorrect if
+       there is a random null byte followed by more real seed data.
+       however, null padding all the way to the end *can* be ignored */
+    while (len > 0 && !g.seed[len-1]) {
+        len--;
     }
-    *out = '\0';
+    b64_encode(g.seed, out, len);
 }
 
-#ifdef USE_CHACHA
 static int
 optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
 {
