@@ -738,7 +738,9 @@ struct chacha_rng_t {
     rng_budget_t *rng_budget; /* the current top of the RNG budget stack */
 };
 
-#define MAX_B64_RNG_SEED_LEN ((MAX_RNG_SEED_LEN * 8) / 6)
+/* extra b64 byte needed for overflow of the last four bits,
+   32x 8 bit seed = 256 bits, 32*8/6 gives only 42x 6 bit = 252 bits */
+#define MAX_B64_RNG_SEED_LEN (1 + (MAX_RNG_SEED_LEN * 8) / 6)
 
 #else
 
