@@ -3159,23 +3159,25 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
                base64-encoded and decode it for the actual seed */
             len_encoded = strlen(op);
 
+            /* ensure seed is valid base64 */
+            if (!is_valid_b64(op, strlen(op))) {
+                config_error_add("'%s' is invalid base64", op);
+                return optn_err;
+            }
+
             /* if padding '=' bytes are used, MAX_B64_RNG_SEED_LEN + 1 is allowed,
-               but *only* if the last character is '=' */
+               but *only* if the last character is '=' - anything else would result in >32 byte seed */
             if (len_encoded > MAX_B64_RNG_SEED_LEN
                 && !(len_encoded == MAX_B64_RNG_SEED_LEN + 1 && op[len_encoded - 1] == '=')) {
                 config_error_add("%s parameter length (%d) too long: maximum %d bytes, or %d if final byte is '='",
                                  allopt[optidx].name, len_encoded, MAX_B64_RNG_SEED_LEN, MAX_B64_RNG_SEED_LEN + 1);
                 return optn_err;
             }
-            for (i = 0; i < len_encoded; ++i) {
-                if (!is_valid_b64(op[i])) {
-                    config_error_add("'%c' is invalid: base64 encoded seed expected", op[i]);
-                    return optn_err;
-                }
-            }
+
+            /* decode base64-encoded seed, pad result with null bytes if it's
+               shorter than 32-bytes when decoded */
             len_decoded = b64_decode(op, seed_tmp, len_encoded);
             strncpy(g.seed, seed_tmp, sizeof(g.seed));
-            // pad with 0s if len_decoded < sizeof(g.seed)
             for (i = len_decoded; i < sizeof(g.seed); i++) {
                 g.seed[i] = 0;
             }

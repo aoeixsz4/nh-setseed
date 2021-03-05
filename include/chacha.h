@@ -35,7 +35,8 @@
 void chacha_8rounds_prng(uint32_t output[16], const uint8_t seed[32], uint64_t stream_id, uint64_t pos);
 
 /* '=' is valid as a padding character */
-#define is_valid_b64(c) (('A' <= c && c <= 'z') || ('0' <= c && c <= '9') || c == '+' || c == '/' || c == '=')
+#define is_valid_b64_char(c) (('A' <= c && c <= 'z') || ('0' <= c && c <= '9') || c == '+' || c == '/')
+unsigned char is_valid_b64(char *src, size_t src_len);
 size_t b64_encode(char *src, char *dest, size_t src_len);
 size_t b64_decode(char *src, char *dest, size_t src_len);
 #endif

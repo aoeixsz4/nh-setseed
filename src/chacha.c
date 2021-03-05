@@ -8,6 +8,7 @@ Modified by infinigon 20210127
 
 #include "chacha.h"
 #include <stddef.h>
+#include <string.h>
 
 #define U8TO32_LITTLE(p) \
   (((uint32_t)((p)[0])      ) | \
@@ -75,7 +76,7 @@ static const unsigned char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij
 unsigned char
 reverse_b64_table(unsigned char c)
 {
-    int i;
+    size_t i;
     for (i = 0; i < strlen(b64_table); i++) {
         if (b64_table[i] == c) {
             return i;
@@ -83,6 +84,61 @@ reverse_b64_table(unsigned char c)
     }
     /* should not happen */
     return 255;
+}
+
+/* validate source is actually correct base64-encoded data, but allow missing/implicit padding */
+unsigned char
+is_valid_b64(char *src_s, size_t len)
+{
+  size_t i;
+  unsigned char *src = (unsigned char *) src_s;
+
+  /* truncate padding characters, at most the last two characters of a quartet */
+  while (src[len-1] == '=') {
+    if (len % 4 == 0) {
+      len--;
+    } else if (len % 4 == 3) {
+      len--;
+    } else {
+      /* incorrect padding, invalid b64 */
+      return 0;
+    }
+  }
+
+  /* after truncating padding chars, ensure all remaining are correct B64 */
+  for (i = 0; i < len; i++) {
+    if (!is_valid_b64_char(src[i])) {
+      return 0;
+    }
+
+    /* additional checks for the last character */
+    if (i == len - 1) {
+      unsigned char b64_val = reverse_b64_table(src[i]);
+      switch (len % 4) {
+        case 1:
+          /* impossible - the minimum partial encode is two sextets */
+          return 0;
+        case 2:
+          /* in this case the lowest 4 bits must be 0 */
+          if (b64_val & 0xF) {
+            return 0;
+          }
+          break;
+        case 3:
+          /* in this case the lowest 2 bits must be 0 */
+          if (b64_val & 0x3) {
+            return 0;
+          }
+          break;
+        default:
+          /* default is 0 which is good */
+          break;
+      }
+    }
+  }
+
+  /* passed! */
+  return 1;
 }
 
 size_t
@@ -129,9 +185,12 @@ b64_decode(char *src_s, char *dest, size_t len)
       b64_bitdex = 0;
     }
   }
-  if (dest_bitdex) {
-      dest[dest_index++] = u8_val;
-  }
+  
+  /* should raise an error/impossible here somehow, but validating
+     input will also ensure only valid termination sequences are used */
+  /*if (dest_bitdex && u8_val) {
+     PANIC 
+  }*/
   dest[dest_index] = 0;
   return dest_index;
 }
@@ -188,6 +247,6 @@ b64_encode(char *src_s, char *dest, size_t len)
   while (dest_index % 4) {
     dest[dest_index++] = '=';
   }
-  dest[dest_index++] = 0;
+  dest[dest_index] = 0;
   return dest_index;
 }
