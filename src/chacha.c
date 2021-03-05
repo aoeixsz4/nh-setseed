@@ -6,9 +6,15 @@ Public domain.
 Modified by infinigon 20210127
 */
 
+#include "config.h"
+#include "hack.h"
 #include "chacha.h"
 #include <stddef.h>
 #include <string.h>
+
+static boolean is_valid_b64_strict(char *src, size_t src_len);
+static size_t b64_nullpad(char *src, char *dest, size_t len);
+static unsigned char reverse_b64_table(unsigned char c);
 
 #define U8TO32_LITTLE(p) \
   (((uint32_t)((p)[0])      ) | \
@@ -66,18 +72,19 @@ void chacha_8rounds_prng(uint32_t output[16], const uint8_t seed[32], uint64_t s
   for (i = 0;i < 16;++i) output[i] = PLUS(x[i],input[i]);
 }
 
-static const unsigned char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #define fill_bits(n) ((1 << n) - 1)
 #define SEXTET 6
 #define OCTET  8
+#define BASE64 64
+static const unsigned char b64_table[BASE64 + 1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* pass only valid b64 chars */
-unsigned char
+static unsigned char
 reverse_b64_table(unsigned char c)
 {
     size_t i;
-    for (i = 0; i < strlen(b64_table); i++) {
+    for (i = 0; i < BASE64; i++) {
         if (b64_table[i] == c) {
             return i;
         }
@@ -86,9 +93,28 @@ reverse_b64_table(unsigned char c)
     return 255;
 }
 
-/* validate source is actually correct base64-encoded data, but allow missing/implicit padding */
-unsigned char
+/* lazy validation */
+boolean
 is_valid_b64(char *src_s, size_t len)
+{
+  size_t i;
+  unsigned char *src = (unsigned char *) src_s;
+
+  /* don't bother truncating padding chars. if they were used,
+     then strict validation should apply */
+  for (i = 0; i < len; i++) {
+    if (!is_valid_b64_char(src[i])) {
+      return 0;
+    }
+  }
+
+  /* passed! */
+  return 1;
+}
+
+/* validate source is actually correct base64-encoded data, but allow missing/implicit padding */
+static boolean
+is_valid_b64_strict(char *src_s, size_t len)
 {
   size_t i;
   unsigned char *src = (unsigned char *) src_s;
@@ -141,6 +167,30 @@ is_valid_b64(char *src_s, size_t len)
   return 1;
 }
 
+/* this function assumes weak validation succeeded,
+   but weak validation failed. This means there are
+   some bits that would be truncated if they were
+   decoded without modification. returns number of
+   bytes added (excluding null). */
+static size_t
+b64_nullpad(char *src, char *dest, size_t len)
+{
+  strncpy(dest, src, len + 1);
+  switch (len % 4) {
+    case 1:
+      strcpy(dest+len, "A==");
+      return 3;
+    case 2:
+      strcpy(dest+len, "A=");
+      return 2;
+    case 3:
+      strcpy(dest+len, "A");
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 size_t
 b64_decode(char *src_s, char *dest, size_t len)
 {
@@ -148,7 +198,12 @@ b64_decode(char *src_s, char *dest, size_t len)
   unsigned char b64_val, u8_val, mask;
 
   /* probably easier to work with unsigned here */
-  unsigned char *src = (unsigned char *) src_s;
+  unsigned char src[MAX_B64_RNG_SEED_LEN+2];
+  if (!is_valid_b64_strict(src_s, len)) {
+    len += b64_nullpad(src_s, (char *)src, len);
+  } else {
+    strncpy((char *)src, src_s, len + 1);
+  }
 
   src_index = dest_index = dest_bitdex = b64_bitdex = 0;
   u8_val = b64_val = 0;
