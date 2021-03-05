@@ -3128,15 +3128,21 @@ optfn_scroll_margin(int optidx, int req, boolean negated, char *opts, char *op)
 void
 get_printable_seed(char *out)
 {
-    size_t len;
-    len = sizeof(g.seed);
-    /* treating the seed as null-terminated would be incorrect if
-       there is a random null byte followed by more real seed data.
-       however, null padding all the way to the end *can* be ignored */
-    while (len > 0 && !g.seed[len-1]) {
-        len--;
+    /* we only need to do the actual decode if we had a random seed,
+       otherwise, use the user-supplied one */
+    if (!flags.setseed) {
+        size_t len;
+        len = sizeof(g.seed);
+        /* treating the seed as null-terminated would be incorrect if
+           there is a random null byte followed by more real seed data.
+           however, null padding all the way to the end *can* be ignored */
+        while (len > 0 && !g.seed[len-1]) {
+            len--;
+        }
+        b64_encode(g.seed, out, len);
+    } else {
+        strncpy(out, g.user_seed_opt, MAX_B64_RNG_SEED_LEN + 2);
     }
-    b64_encode(g.seed, out, len);
 }
 
 static int
@@ -3178,6 +3184,11 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
                shorter than 32-bytes when decoded */
             len_decoded = b64_decode(op, seed_tmp, len_encoded);
             strncpy(g.seed, seed_tmp, sizeof(g.seed));
+
+            /* save the seed as the user specified it, so that their original
+               version is preserved in logs etc., even if we added funny padding
+               internally to deal with funky base64 encoding behaviour */
+            strncpy(g.user_seed_opt, op, MAX_B64_RNG_SEED_LEN + 2);
             for (i = len_decoded; i < sizeof(g.seed); i++) {
                 g.seed[i] = 0;
             }

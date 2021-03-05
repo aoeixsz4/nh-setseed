@@ -100,6 +100,11 @@ is_valid_b64(char *src_s, size_t len)
   size_t i;
   unsigned char *src = (unsigned char *) src_s;
 
+  /* should also return true if strict validation succeeds */
+  if (is_valid_b64_strict(src_s, len)) {
+    return 1;
+  }
+
   /* don't bother truncating padding chars. if they were used,
      then strict validation should apply */
   for (i = 0; i < len; i++) {

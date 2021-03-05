@@ -591,6 +591,7 @@ const struct instance_globals g_init = {
 #ifdef USE_CHACHA
     UNDEFINED_VALUES, /* rngs */
     UNDEFINED_VALUES, /* seed */
+    UNDEFINED_VALUES, /* user-supplied text seed */
     RNG_CORE, /* default_rng */
 #endif
 

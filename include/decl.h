@@ -1202,6 +1202,7 @@ struct instance_globals {
 #ifdef USE_CHACHA
     struct chacha_rng_t rngs[RNG_INDEX_MAX];
     char seed[32];
+    char user_seed_opt[MAX_B64_RNG_SEED_LEN + 2];
     int default_rng;
 #endif
 
