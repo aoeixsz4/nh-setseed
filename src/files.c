@@ -4664,7 +4664,7 @@ const char *buffer;
 
 #ifdef USE_CHACHA
             if (flags.setseed) {
-            char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+1];
+            char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+2]; /* need extra space for padding as well as null */
             get_printable_seed(seedbuf_tmp);
             snprintf(tmpbuf, 1024, "lltype=%d%cuser_seed=%u%cseed=%s%cplayer=%s%crole=%s%crace=%s%cgender=%s%calign=%s%cturns=%ld%crealtime=%ld%cstarttime=%ld%ccurtime=%ld%cmessage=%s\n",
                     (ll_type & sysopt.livelog), LLOG_SEP,

@@ -735,7 +735,7 @@ dump_everything(int how,
 
 #ifdef USE_CHACHA
     /* add seed information */
-    char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+1];
+    char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+2]; /* space at the end for '=' padding and null */
     get_printable_seed(seedbuf_tmp);
     Sprintf(pbuf, flags.setseed
                 ? "Player chosen seed: %s"

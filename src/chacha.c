@@ -96,8 +96,10 @@ b64_decode(char *src_s, char *dest, size_t len)
 
   src_index = dest_index = dest_bitdex = b64_bitdex = 0;
   u8_val = b64_val = 0;
+  /* if src_index == len but we have bits left over, we're not done */
   while (src_index < len || b64_bitdex) {
-    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
+    /* we don't actually want or expect '=' in the seed set in OPTIONS,
+     * but we'll treat them as padding here */
     if (!b64_bitdex) {
         if (src[src_index] == '=') {
             break;
@@ -105,6 +107,7 @@ b64_decode(char *src_s, char *dest, size_t len)
         b64_val = reverse_b64_table(src[src_index++]);
     }
 
+    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
     bits_wanted = OCTET - dest_bitdex;
     bits_avail  = SEXTET - b64_bitdex;
 
@@ -146,12 +149,14 @@ b64_encode(char *src_s, char *dest, size_t len)
 
   src_index = dest_index = src_bitdex = b64_bitdex = 0;
   u8_val = b64_val = 0;
+
+  /* need to handle leftover bits if src_index == len and src_bitdex is non-zero */
   while (src_index < len || src_bitdex) {
-    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
     if (!src_bitdex) {
         u8_val = src[src_index++];
     }
 
+    /* if we want 6 bits and 8 are still available, the mask will be shifted up 2 */
     bits_wanted = SEXTET - b64_bitdex;
     bits_avail  = OCTET - src_bitdex;
 
@@ -173,8 +178,15 @@ b64_encode(char *src_s, char *dest, size_t len)
       src_bitdex = 0;
     }
   }
+
+  /* add any leftover bits in temp b64_val */
   if (b64_bitdex) {
       dest[dest_index++] = b64_table[b64_val];
+  }
+
+  /* add padding and finally null terminate the string */
+  while (dest_index % 4) {
+    dest[dest_index++] = '=';
   }
   dest[dest_index++] = 0;
   return dest_index;

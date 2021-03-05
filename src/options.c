@@ -3155,17 +3155,21 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
         }
         if ((op = string_for_env_opt(allopt[optidx].name, opts, FALSE))
             != empty_optstr) {
-            // instead of copying the configured seed directly, treat it as
-            // base64-encoded and decode it for the actual seed
+            /* instead of copying the configured seed directly, treat it as
+               base64-encoded and decode it for the actual seed */
             len_encoded = strlen(op);
-            if (len_encoded > MAX_B64_RNG_SEED_LEN) {
-                config_error_add("%s parameter length (%d) too long: maximum %d characters",
-                                 allopt[optidx].name, len_encoded, MAX_B64_RNG_SEED_LEN);
+
+            /* if padding '=' bytes are used, MAX_B64_RNG_SEED_LEN + 1 is allowed,
+               but *only* if the last character is '=' */
+            if (len_encoded > MAX_B64_RNG_SEED_LEN
+                && !(len_encoded == MAX_B64_RNG_SEED_LEN + 1 && op[len_encoded - 1] == '=')) {
+                config_error_add("%s parameter length (%d) too long: maximum %d bytes, or %d if final byte is '='",
+                                 allopt[optidx].name, len_encoded, MAX_B64_RNG_SEED_LEN, MAX_B64_RNG_SEED_LEN + 1);
                 return optn_err;
             }
             for (i = 0; i < len_encoded; ++i) {
                 if (!is_valid_b64(op[i])) {
-                    config_error_add("'%c' is invalid: base64 encoded seed expeted", op[i]);
+                    config_error_add("'%c' is invalid: base64 encoded seed expected", op[i]);
                     return optn_err;
                 }
             }

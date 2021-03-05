@@ -374,7 +374,7 @@ writexlentry(FILE* rfile, struct toptenentry* tt, int how)
     Fprintf(rfile, "%cbones=%ld", XLOG_SEP, u.uroleplay.numbones);
     Fprintf(rfile, "%cuser_seed=%d", XLOG_SEP, !!flags.setseed);
 #ifdef USE_CHACHA
-    char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+1];
+    char seedbuf_tmp[MAX_B64_RNG_SEED_LEN+2]; /* +2 for padding and null termination */
     get_printable_seed(seedbuf_tmp);
     Fprintf(rfile, "%cseed=%s", XLOG_SEP, seedbuf_tmp);
 #endif
