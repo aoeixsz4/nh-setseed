@@ -20,7 +20,7 @@ USRGRP="games:games"
 COMPRESSBIN="/bin/gzip"
 # fixed data to copy (leave blank to skip)
 NH_GIT="/home/build/setseed"
-NH_BRANCH="setseed-hdf" # will probably need to make another hdf branch for this one
+NH_BRANCH="master" # will probably need to make another hdf branch for this one
 # HACKDIR from include/config.h; aka nethack subdir inside chroot
 NHSUBDIR="setseed"
 # VAR_PLAYGROUND from include/unixconf.h
