@@ -1,4 +1,4 @@
-# NetHack 3.7  tribute       $NHDT-Date: 1610152952 2021/01/09 00:42:32 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.93 $
+# NetHack 3.7  tribute       $NHDT-Date: 1617150563 2021/03/31 00:29:23 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.97 $
 # Copyright (c) 2017 by Robert Patrick Rankin
 # NetHack may be freely redistributed.  See license for details.
 # A tribute introduced in NetHack 3.6.0 to:
@@ -1064,7 +1064,7 @@ The bursar scowled at him.  "No need to get carried away," he said.
 #
 #
 #
-%title Sourcery (10)
+%title Sourcery (11)
 # p. 9 (Signet edition; passage starts mid-paragraph and ends mid-paragraph)
 %passage 1
 "[...]  And what would humans be without love?"
@@ -1073,6 +1073,7 @@ RARE, said Death.  [...]
 
   [Sourcery, by Terry Pratchett]
 %e passage
+# p. 180 (passage starts mid-paragraph)
 %passage 2
 They suffered from the terrible delusion that something could be done.
 They seemed prepared to make the world the way they wanted it or die in the
@@ -1094,8 +1095,10 @@ MANY HAVE, said Death evenly.
 
   [Sourcery, by Terry Pratchett]
 %e passage
-# pp. 40-41 (text has 'the moment and the words' which is obviously a typo;
-#            it might have intended 'that' for 'and'; we just drop 'and')
+# pp. 40-41 (this used to have a correction for "an obvious typo" in the last
+#            sentence [before the footnote] which was actually a transciption
+#            error, with "were" erroneously inserted [causing the sentence to
+#            parse oddly] but not present in the original text; fixed now)
 %passage 4
 The thief, as will become apparent, was a special type of thief.  This
 thief was an artist of theft.  Other thieves merely stole everything that
@@ -1113,8 +1116,8 @@ while it was in the process of winning a race.  When Gritoller Mimpsey,
 vice-president of the Thieves' Guild, was jostled in the marketplace and
 then found on returning home that a freshly-stolen handful of diamonds
 had vanished from their place of concealment, he knew who to blame.(1)
-This was the type of thief that could steal the initiative, the moment the
-words were out of your mouth.
+This was the type of thief that could steal the initiative, the moment
+and the words out of your mouth.
 
 (1) This was because Gritoller had swallowed the jewels for safe keeping.
 
@@ -1256,6 +1259,24 @@ themselves.
 They are not necessarily very good at it.
 
 (1) He always argued that he was.
+
+  [Sourcery, by Terry Pratchett]
+%e passage
+# additional passage added for 3.7.0
+# p. 164 (passage begins mid-sentence)
+%passage 11
+[...] killing a brother wizard with magic was well-nigh impossible on
+account of the layers of protective spells that any cautious wizard
+maintained about his person at all times.(1)  The first thing a young
+wizard learns at Unseen University--apart from where his peg is, and
+which way to the lavatory--is that he must protect himself at all times.
+
+Some people think this is paranoia, but it isn't.  Paranoids only think
+everyone is out to get them.  Wizards /know/ it.
+
+(1) Of course, wizards often killed one another by ordinary, non-magical
+means, but this was perfectly allowable and death by assassination was
+considered natural causes for a wizard.
 
   [Sourcery, by Terry Pratchett]
 %e passage
@@ -2184,7 +2205,9 @@ so far was the ability to turn gold into less gold.
 
   [Moving Pictures, by Terry Pratchett]
 %e passage
-# pp. 44, 45, 46 (multiple paragraphs skipped in the first two gaps)
+# pp. 44, 45, 46 (multiple paragraphs skipped in the first two gaps;
+#                 the dog is Gaspode, who can talk but conceals that from
+#                 almost everybody; his use of 'bin' for 'been' is accurate)
 %passage 3
 He looked down.  There was a dog sitting by his feet.
 
@@ -2328,7 +2351,7 @@ nearest salad growing district was thirty slow miles away.
 
 Fruntkin the short-order chef hazarded a guess.
 
-'Celery?" he said.  He peered closer.  "Yeah, celery."
+"Celery?" he said.  He peered closer.  "Yeah, celery."
 
 "It /brown/."
 
@@ -2396,7 +2419,8 @@ All over the entire room, sometimes.
 
   [Moving Pictures, by Terry Pratchett]
 %e passage
-# p. 204 (passage ends mid-paragraph; musings are by Gaspode the dog)
+# p. 204 (passage ends mid-paragraph; musings are by Gaspode the dog;
+#         'sunnink', 'fings', 'wot' are accurate, as is 'finds' for 'find')
 %passage 13
 Sunnink dreadful in there, he thought.  Prob'ly tentacled fings that rips
 your face off.  I mean, when you finds mysterious doors in old hills, it
@@ -2419,7 +2443,7 @@ megalomaniac!"
 
 Dibbler removed his cigar.
 
-"That's /Mister/ Megalomanic to you," he said.
+"That's /Mister/ Megalomaniac to you," he said.
 
   [Moving Pictures, by Terry Pratchett]
 %e passage
@@ -2437,6 +2461,37 @@ Dibbler removed his cigar.
 
   [Moving Pictures, by Terry Pratchett]
 %e passage
+#
+# New for 3.7 - these are worthy but 16 passages are already more than enough.
+#-#
+#-# p. 304
+#-%passage 17
+#-"Did I hear things, or can that little dog speak?" said Dibbler.
+#-
+#-"He says he can't," said Victor.
+#-
+#-Dibbler hesitated.  The excitement was unhinging him a little.  "Well," he
+#-said, "I suppose he should know."
+#-
+#-  [Moving Pictures, by Terry Pratchett]
+#-%e passage
+#-# p. 329 (two farmers have just watched a pair of wizards incompetently
+#-#         flying together on a broom crash into a barn containing harvested
+#-#         cabbages; one of them had predicted, accurately as it turned out,
+#-#         that the flyers would crash out the far side accompanied by
+#-#         scattering chickens and a shower of feathers; 'believer' had
+#-#         scoffed at the prediction because there were no chickens inside;
+#-#         they've just looked inside and confirmed the lack of any poultry)
+#-%passage 18
+#-The farmers crept away.
+#-
+#-"Dang me," said the believer in cabbages.  "They're wizards.  Best not to
+#-meddle in the affairs of danged wizards."
+#-
+#-"Yeah," said the other farmer.  "Er... what does dang mean?  Exactly?"
+#-
+#-  [Moving Pictures, by Terry Pratchett]
+#-%e passage
 %e title
 #
 #

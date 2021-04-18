@@ -1,4 +1,4 @@
-/* NetHack 3.7	detect.c	$NHDT-Date: 1606009000 2020/11/22 01:36:40 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.123 $ */
+/* NetHack 3.7	detect.c	$NHDT-Date: 1613721262 2021/02/19 07:54:22 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.131 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -1339,9 +1339,12 @@ do_mapping(void)
         /* browse_map() instead of display_nhwindow(WIN_MAP, TRUE) */
         browse_map(TER_DETECT | TER_MAP | TER_TRP | TER_OBJ,
                    "anything of interest");
-        docrt();
+        map_redisplay(); /* calls reconstrain_map() and docrt() */
+    } else {
+        /* we only get here when unconstrained is False, so reconstrain_map
+           will be a no-op; call it anyway */
+        reconstrain_map();
     }
-    reconstrain_map();
     exercise(A_WIS, TRUE);
 }
 

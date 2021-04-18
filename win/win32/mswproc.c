@@ -1,4 +1,4 @@
-/* NetHack 3.7	mswproc.c	$NHDT-Date: 1596498364 2020/08/03 23:46:04 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.153 $ */
+/* NetHack 3.7	mswproc.c	$NHDT-Date: 1613292828 2021/02/14 08:53:48 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.165 $ */
 /* Copyright (C) 2001 by Alex Kompel 	 */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -86,6 +86,7 @@ struct window_procs mswin_procs = {
         | WC_FONTSIZ_MESSAGE | WC_FONTSIZ_STATUS | WC_FONTSIZ_MENU
         | WC_FONTSIZ_TEXT | WC_TILE_WIDTH | WC_TILE_HEIGHT | WC_TILE_FILE
         | WC_VARY_MSGCOUNT | WC_WINDOWCOLORS | WC_PLAYER_SELECTION
+        | WC_PERM_INVENT
         | WC_SPLASH_SCREEN | WC_POPUP_DIALOG | WC_MOUSE_SUPPORT,
 #ifdef STATUS_HILITES
     WC2_HITPOINTBAR | WC2_FLUSH_STATUS | WC2_RESET_STATUS | WC2_HILITE_STATUS |
@@ -1232,9 +1233,9 @@ mswin_select_menu(winid wid, int how, MENU_ITEM_P **selected)
         window up, otherwise empty.
 */
 void
-mswin_update_inventory(void)
+mswin_update_inventory(int arg)
 {
-    logDebug("mswin_update_inventory()\n");
+    logDebug("mswin_update_inventory(%d)\n", arg);
     if (iflags.perm_invent && g.program_state.something_worth_saving
         && iflags.window_inited && WIN_INVEN != WIN_ERR)
         display_inventory(NULL, FALSE);
@@ -1302,7 +1303,8 @@ void
 mswin_print_glyph(winid wid, xchar x, xchar y,
                   const glyph_info *glyphinfo, const glyph_info *bkglyphinfo)
 {
-    logDebug("mswin_print_glyph(%d, %d, %d, %d, %d, %lu)\n", wid, x, y, glyphinfo->glyph, bkglyphinfo->glyph);
+    logDebug("mswin_print_glyph(%d, %d, %d, %d, %d, %lu)\n",
+             wid, x, y, glyphinfo->glyph, bkglyphinfo->glyph);
 
     if ((wid >= 0) && (wid < MAXWINDOWS)
         && (GetNHApp()->windowlist[wid].win != NULL)) {
@@ -2057,7 +2059,7 @@ mswin_preference_update(const char *pref)
     }
 
     if (stricmp(pref, "perm_invent") == 0) {
-        mswin_update_inventory();
+        mswin_update_inventory(0);
         return;
     }
 }
@@ -3076,14 +3078,16 @@ status_update(int fldindex, genericptr_t ptr, int chg, int percent, int color, u
 DISABLE_WARNING_FORMAT_NONLITERAL
 
 void
-mswin_status_update(int idx, genericptr_t ptr, int chg, int percent, int color, unsigned long *condmasks)
+mswin_status_update(int idx, genericptr_t ptr, int chg, int percent,
+                    int color, unsigned long *condmasks)
 {
     long cond, *condptr = (long *) ptr;
     char *text = (char *) ptr;
     MSNHMsgUpdateStatus update_cmd_data;
     int ochar, ci;
 
-    logDebug("mswin_status_update(%d, %p, %d, %d, %x, %p)\n", idx, ptr, chg, percent, color, condmasks);
+    logDebug("mswin_status_update(%d, %p, %d, %d, %x, %p)\n",
+             idx, ptr, chg, percent, color, condmasks);
 
     if (idx >= 0) {
 

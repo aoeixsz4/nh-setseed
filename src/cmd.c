@@ -1,29 +1,10 @@
-/* NetHack 3.7	cmd.c	$NHDT-Date: 1611952382 2021/01/29 20:33:02 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.452 $ */
+/* NetHack 3.7	cmd.c	$NHDT-Date: 1618175625 2021/04/11 21:13:45 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.463 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
 #include "func_tab.h"
-
-/* Macros for meta and ctrl modifiers:
- *   M and C return the meta/ctrl code for the given character;
- *     e.g., (C('c') is ctrl-c
- */
-#ifndef M
-#ifndef NHSTDC
-#define M(c) (0x80 | (c))
-#else
-#define M(c) ((c) - 128)
-#endif /* NHSTDC */
-#endif
-
-#ifndef C
-#define C(c) (0x1f & (c))
-#endif
-
-#define unctrl(c) ((c) <= C('z') ? (0x60 | (c)) : (c))
-#define unmeta(c) (0x7f & (c))
 
 #ifdef ALTMETA
 static boolean alt_esc = FALSE;
@@ -1159,7 +1140,7 @@ wiz_panic(void)
         u.uen = u.uenmax = 1000;
         return 0;
     }
-    if (paranoid_query(ParanoidQuit,
+    if (paranoid_query(TRUE,
                        "Do you want to call panic() and end your game?"))
         panic("Crash test.");
     return 0;
@@ -1232,14 +1213,11 @@ wiz_show_vision(void)
     putstr(win, 0, "");
     for (y = 0; y < ROWNO; y++) {
         for (x = 1; x < COLNO; x++) {
-            if (x == u.ux && y == u.uy)
+            if (x == u.ux && y == u.uy) {
                 row[x] = '@';
-            else {
+            } else {
                 v = g.viz_array[y][x]; /* data access should be hidden */
-                if (v == 0)
-                    row[x] = ' ';
-                else
-                    row[x] = '0' + g.viz_array[y][x];
+                row[x] = (v == 0) ? ' ' : ('0' + v);
             }
         }
         /* remove trailing spaces */
@@ -1885,7 +1863,11 @@ doterrain(void)
     return 0; /* no time elapses */
 }
 
-/* ordered by command name */
+/* extcmdlist: full command list, ordered by command name;
+   commands with no keystroke or with only a meta keystroke generally
+   need to be flagged as autocomplete and ones with a regular keystroke
+   or control keystroke generally should not be; there are a few exceptions
+   such as ^O/#overview and C/N/#name */
 struct ext_func_tab extcmdlist[] = {
     { '#',    "#", "perform an extended command",
               doextcmd, IFBURIED | GENERALCMD, NULL },
@@ -1925,6 +1907,8 @@ struct ext_func_tab extcmdlist[] = {
               doengrave, 0, NULL },
     { M('e'), "enhance", "advance or check weapon and spell skills",
               enhance_weapon_skill, IFBURIED | AUTOCOMPLETE, NULL },
+    /* #exploremode should be flagged AUTOCOMPETE but that would negatively
+       impact frequently used #enhance by making #e become ambiguous */
     { M('X'), "exploremode", "enter explore (discovery) mode",
               enter_explore_mode, IFBURIED | GENERALCMD, NULL },
     { 'f',    "fire", "fire ammunition from quiver",
@@ -1975,12 +1959,17 @@ struct ext_func_tab extcmdlist[] = {
               doopen, 0, NULL },
     { 'O',    "options", "show option settings, possibly change them",
               doset, IFBURIED | GENERALCMD, NULL },
+    /* #overview used to need autocomplete and has retained that even
+       after being assigned to ^O [old wizard mode ^O is now #wizwhere] */
     { C('o'), "overview", "show a summary of the explored dungeon",
               dooverview, IFBURIED | AUTOCOMPLETE, NULL },
+    /* [should #panic actually autocomplete?] */
     { '\0',   "panic", "test panic routine (fatal to game)",
               wiz_panic, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { 'p',    "pay", "pay your shopping bill",
               dopay, 0, NULL },
+    { '|',    "perminv", "scroll persistent inventory display",
+              doperminv, IFBURIED | GENERALCMD, NULL },
     { ',',    "pickup", "pick up things at the current location",
               dopickup, 0, NULL },
     { '\0',   "polyself", "polymorph self",
@@ -2075,7 +2064,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('t'), "turn", "turn undead away",
               doturn, IFBURIED | AUTOCOMPLETE, NULL },
     { 'X',    "twoweapon", "toggle two-weapon combat",
-              dotwoweapon, AUTOCOMPLETE, NULL },
+              dotwoweapon, 0, NULL },
     { M('u'), "untrap", "untrap something",
               dountrap, AUTOCOMPLETE, NULL },
     { '<',    "up", "go up a staircase",
@@ -2108,17 +2097,17 @@ struct ext_func_tab extcmdlist[] = {
               wiz_debug_cmd_bury, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
 #endif
     { C('e'), "wizdetect", "reveal hidden things within a small radius",
-              wiz_detect, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_detect, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wizfliplevel", "flip the level",
               wiz_flip_level, IFBURIED | WIZMODECMD, NULL },
     { C('g'), "wizgenesis", "create a monster",
-              wiz_genesis, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_genesis, IFBURIED | WIZMODECMD, NULL },
     { C('i'), "wizidentify", "identify all items in inventory",
-              wiz_identify, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_identify, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wizintrinsic", "set an intrinsic",
               wiz_intrinsic, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { C('v'), "wizlevelport", "teleport to another level",
-              wiz_level_tele, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_level_tele, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wizloaddes", "load and execute a des-file lua script",
               wiz_load_splua, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wizloadlua", "load and execute a lua script",
@@ -2126,7 +2115,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0',   "wizmakemap", "recreate the current level",
               wiz_makemap, IFBURIED | WIZMODECMD, NULL },
     { C('f'), "wizmap", "map the level",
-              wiz_map, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_map, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wizmgender", "force added info about monster gender",
               wiz_mgender, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizrng", "show status of RNGs",
@@ -2140,7 +2129,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0',   "wizwhere", "show locations of special levels",
               wiz_where, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { C('w'), "wizwish", "wish for something",
-              wiz_wish, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+              wiz_wish, IFBURIED | WIZMODECMD, NULL },
     { '\0',   "wmode", "show wall modes",
               wiz_show_wmodes, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { 'z',    "zap", "zap a wand",
@@ -2251,8 +2240,12 @@ key2extcmddesc(uchar key)
     }
     /* finally, check whether 'key' is a command */
     if (g.Cmd.commands[key]) {
-        if (g.Cmd.commands[key]->ef_txt)
-            return g.Cmd.commands[key]->ef_desc;
+        if (g.Cmd.commands[key]->ef_txt) {
+            Sprintf(key2cmdbuf, "%s (#%s)",
+                    g.Cmd.commands[key]->ef_desc,
+                    g.Cmd.commands[key]->ef_txt);
+            return key2cmdbuf;
+        }
     }
     return (char *) 0;
 }
@@ -3004,6 +2997,7 @@ RESTORE_WARNING_FORMAT_NONLITERAL
 void
 sanity_check(void)
 {
+    (void) check_invent_gold("invent");
     obj_sanity_check();
     timer_sanity_check();
     mon_sanity_check();
@@ -3124,96 +3118,6 @@ spkey_name(int nhkf)
         }
     }
     return name;
-}
-
-/* returns a one-byte character from the text; may change txt[] */
-uchar
-txt2key(char *txt)
-{
-    uchar uc;
-    boolean makemeta = FALSE;
-
-    txt = trimspaces(txt);
-    if (!*txt)
-        return '\0';
-
-    /* simple character */
-    if (!txt[1])
-        return (uchar) txt[0];
-
-    /* a few special entries */
-    if (!strcmp(txt, "<enter>"))
-        return '\n';
-    if (!strcmp(txt, "<space>"))
-        return ' ';
-    if (!strcmp(txt, "<esc>"))
-        return '\033';
-
-    /* control and meta keys */
-    if (highc(*txt) == 'M') {
-        /*
-         * M <nothing>             return 'M'
-         * M - <nothing>           return M-'-'
-         * M <other><nothing>      return M-<other>
-         * otherwise M is pending until after ^/C- processing.
-         * Since trailing spaces are discarded, the only way to
-         * specify M-' ' is via "160".
-         */
-        if (!txt[1])
-            return (uchar) *txt;
-        /* skip past 'M' or 'm' and maybe '-' */
-        ++txt;
-        if (*txt == '-' && txt[1])
-            ++txt;
-        if (!txt[1])
-            return M((uchar) *txt);
-        makemeta = TRUE;
-    }
-    if (*txt == '^' || highc(*txt) == 'C') {
-        /*
-         * C <nothing>             return 'C' or M-'C'
-         * C - <nothing>           return '-' or M-'-'
-         * C [-] <other><nothing>  return C-<other> or M-C-<other>
-         * C [-] ?                 return <rubout>
-         * otherwise return C-<other> or M-C-<other>
-         */
-        uc = (uchar) *txt;
-        if (!txt[1])
-            return makemeta ? M(uc) : uc;
-        ++txt;
-        /* unlike M-x, lots of values of x are invalid for C-x;
-           checking and rejecting them is not worthwhile; GIGO;
-           we do accept "^-x" as synonym for "^x" or "C-x" */
-        if (*txt == '-' && txt[1])
-            ++txt;
-        /* and accept ^?, which gets used despite not being a control char */
-        if (*txt == '?')
-            return (uchar) (makemeta ? '\377' : '\177'); /* rubout/delete */
-        uc = C((uchar) *txt);
-        return makemeta ? M(uc) : uc;
-    }
-    if (makemeta && *txt)
-        return M((uchar) *txt);
-
-    /* FIXME: should accept single-quote single-character single-quote
-       and probably single-quote backslash octal-digits single-quote;
-       if we do that, the M- and C- results should be pending until
-       after, so that C-'X' becomes valid for ^X */
-
-    /* ascii codes: must be three-digit decimal */
-    if (*txt >= '0' && *txt <= '9') {
-        uchar key = 0;
-        int i;
-
-        for (i = 0; i < 3; i++) {
-            if (txt[i] < '0' || txt[i] > '9')
-                return '\0';
-            key = 10 * key + txt[i] - '0';
-        }
-        return key;
-    }
-
-    return '\0';
 }
 
 /* returns the text for a one-byte encoding;

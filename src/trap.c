@@ -1,4 +1,4 @@
-/* NetHack 3.7	trap.c	$NHDT-Date: 1612053752 2021/01/31 00:42:32 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.402 $ */
+/* NetHack 3.7	trap.c	$NHDT-Date: 1615759958 2021/03/14 22:12:38 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.403 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -352,10 +352,12 @@ maketrap(int x, int y, int typ)
                 || (u.utraptype == TT_LAVA && !is_lava(x, y))))
             reset_utrap(FALSE);
         /* old <tx,ty> remain valid */
-    } else if (IS_FURNITURE(lev->typ)
-               && (!IS_GRAVE(lev->typ) || (typ != PIT && typ != HOLE))) {
+    } else if ((IS_FURNITURE(lev->typ)
+                && (!IS_GRAVE(lev->typ) || (typ != PIT && typ != HOLE)))
+               || (typ == LEVEL_TELEP && single_level_branch(&u.uz))) {
         /* no trap on top of furniture (caller usually screens the
-           location to inhibit this, but wizard mode wishing doesn't) */
+           location to inhibit this, but wizard mode wishing doesn't)
+           and no level teleporter in branch with only one level */
         return (struct trap *) 0;
     } else {
         oldplace = FALSE;
@@ -2778,6 +2780,9 @@ launch_obj(
                 }
             }
             if ((t = t_at(g.bhitpos.x, g.bhitpos.y)) != 0 && otyp == BOULDER) {
+                int newlev = 0;
+                d_level dest;
+
                 switch (t->ttyp) {
                 case LANDMINE:
                     if (rn2(10) > 2) {
@@ -2801,20 +2806,22 @@ launch_obj(
                     }
                     break;
                 case LEVEL_TELEP:
+                    /* 20% chance of picking current level; 100% chance for
+                       that if in single-level branch (Knox) or in endgame */
+                    newlev = random_teleport_level();
+                    /* if trap doesn't work, skip "disappears" message */
+                    if (newlev == depth(&u.uz))
+                        break;
+                    /*FALLTHRU*/
                 case TELEP_TRAP:
                     if (cansee(g.bhitpos.x, g.bhitpos.y))
                         pline("Suddenly the rolling boulder disappears!");
-                    else
+                    else if (!Deaf)
                         You_hear("a rumbling stop abruptly.");
                     singleobj->otrapped = 0;
-                    if (t->ttyp == TELEP_TRAP)
+                    if (t->ttyp == TELEP_TRAP) {
                         (void) rloco(singleobj);
-                    else {
-                        int newlev = random_teleport_level();
-                        d_level dest;
-
-                        if (newlev == depth(&u.uz) || In_endgame(&u.uz))
-                            continue;
+                    } else {
                         add_to_migration(singleobj);
                         get_level(&dest, newlev);
                         singleobj->ox = dest.dnum;
@@ -2838,9 +2845,12 @@ launch_obj(
                     }
                     dist = -1; /* stop rolling immediately */
                     break;
-                }
-                if (used_up || dist == -1)
+                default:
                     break;
+                }
+
+                if (used_up || dist == -1)
+                    break; /* from 'while' loop */
             }
             if (flooreffects(singleobj, g.bhitpos.x, g.bhitpos.y, "fall")) {
                 used_up = TRUE;
@@ -2996,6 +3006,7 @@ isclearpath(
     schar dx,
     schar dy)
 {
+    struct trap *t;
     uchar typ;
     xchar x, y;
 
@@ -3006,6 +3017,9 @@ isclearpath(
         y += dy;
         typ = levl[x][y].typ;
         if (!isok(x, y) || !ZAP_POS(typ) || closed_door(x, y))
+            return FALSE;
+        if ((t = t_at(x, y)) != 0
+            && (is_pit(t->ttyp) || is_hole(t->ttyp) || is_xport(t->ttyp)))
             return FALSE;
     }
     cc->x = x;
@@ -3900,17 +3914,17 @@ water_damage(
         if (carried(obj))
             update_inventory();
         return ER_GREASED;
-    } else if (Is_container(obj) && !Is_box(obj)
-               && (obj->otyp != OILSKIN_SACK || (obj->cursed && !rn2(3)))) {
+    } else if (Is_container(obj)
+               && (!Waterproof_container(obj) || (obj->cursed && !rn2(3)))) {
         if (carried(obj))
-            pline("Water gets into your %s!", ostr);
-
+            pline("Some water gets into your %s!", ostr);
         water_damage_chain(obj->cobj, FALSE);
         return ER_DAMAGED; /* contents were damaged */
-    } else if (obj->otyp == OILSKIN_SACK) {
-        if (carried(obj))
-            pline("Some water slides right off your %s.", ostr);
-        makeknown(OILSKIN_SACK);
+    } else if (Waterproof_container(obj)) {
+        if (carried(obj)) {
+            pline_The("water slides right off your %s.", ostr);
+            makeknown(obj->otyp);
+        }
         /* not actually damaged, but because we /didn't/ get the "water
            gets into!" message, the player now has more information and
            thus we need to waste any potion they may have used (also,

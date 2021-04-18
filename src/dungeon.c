@@ -1175,7 +1175,7 @@ init_dungeons(void)
            so that it's hidden from '#wizwhere' feedback. */
     }
 
-    lua_close(L);
+    nhl_done(L);
 
     for (i = 0; i < pd.n_brs; i++) {
         free((genericptr_t) pd.tmpbranch[i].name);
@@ -1846,6 +1846,17 @@ goto_hell(boolean at_stairs, boolean falling)
 
     find_hell(&lev);
     goto_level(&lev, at_stairs, falling, FALSE);
+}
+
+/* is 'lev' the only level in its branch?  affects level teleporters */
+boolean
+single_level_branch(d_level *lev)
+{
+    /*
+     * TODO:  this should be generalized instead of assuming that
+     * Fort Ludios is the only single level branch in the dungeon.
+     */
+    return Is_knox(lev);
 }
 
 /* equivalent to dest = source */
@@ -3257,7 +3268,7 @@ print_mapseen(winid win, mapseen *mptr,
             Sprintf(buf, "%s: levels %d to %d",
                     g.dungeons[dnum].dname, depthstart,
                     depthstart + g.dungeons[dnum].dunlev_ureached - 1);
-        putstr(win, !final ? ATR_INVERSE : ATR_SUBHEAD, buf);
+        putstr(win, !final ? iflags.menu_headings : ATR_SUBHEAD, buf);
     }
 
     /* calculate level number */
@@ -3282,7 +3293,7 @@ print_mapseen(winid win, mapseen *mptr,
                 (!final || (final == 1 && how == ASCENDED)) ? "are"
                   : (final == 1 && how == ESCAPED) ? "left from"
                     : "were");
-    putstr(win, !final ? ATR_BOLD : ATR_PREFORM, buf);
+    putstr(win, !final ? iflags.menu_headings : ATR_PREFORM, buf);
 
     if (mptr->flags.forgot)
         return;

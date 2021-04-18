@@ -318,17 +318,15 @@ bhitm(struct monst *mtmp, struct obj *otmp)
     case WAN_OPENING:
     case SPE_KNOCK:
         wake = FALSE; /* don't want immediate counterattack */
-        if (u.uswallow && mtmp == u.ustuck) {
-            if (is_animal(mtmp->data)) {
-                if (Blind)
-                    You_feel("a sudden rush of air!");
-                else
-                    pline("%s opens its mouth!", Monnam(mtmp));
-            }
-            expels(mtmp, mtmp->data, TRUE);
-            /* zap which hits steed will only release saddle if it
-               doesn't hit a holding or falling trap; playability
-               here overrides the more logical target ordering */
+        if (mtmp == u.ustuck) {
+            /* zapping either holder/holdee or self [zapyourself()] will
+               release hero from holder's grasp or holdee from hero's grasp */
+            release_hold();
+            learn_it = TRUE;
+
+        /* zap which hits steed will only release saddle if it
+           doesn't hit a holding or falling trap; playability
+           here overrides the more logical target ordering */
         } else if (openholdingtrap(mtmp, &learn_it)) {
             break;
         } else if (openfallingtrap(mtmp, TRUE, &learn_it)) {
@@ -469,6 +467,42 @@ bhitm(struct monst *mtmp, struct obj *otmp)
     if (learn_it)
         learnwand(otmp);
     return 0;
+}
+
+/* hero is held by a monster or engulfed or holding a monster and has zapped
+   opening/unlocking magic at holder/engulfer/holdee or at self */
+void
+release_hold()
+{
+    struct monst *mtmp = u.ustuck;
+
+    if (!mtmp) {
+        impossible("release_hold when not held?");
+    } else if (sticks(g.youmonst.data)) {
+        /* order matters if 'holding' status condition is enabled;
+           set_ustuck() will set flag for botl update, You() pline will
+           trigger a status update with "UHold" removed */
+        set_ustuck((struct monst *) 0);
+        You("release %s.", mon_nam(mtmp));
+    } else if (u.uswallow) {
+        if (is_animal(mtmp->data)) {
+            if (!Blind)
+                pline("%s opens its mouth!", Monnam(mtmp));
+            else
+                You_feel("a sudden rush of air!");
+        }
+        /* gives "you get regurgitated" or "you get expelled from <mon>" */
+        expels(mtmp, mtmp->data, TRUE);
+    } else { /* held but not swallowed */
+        char relbuf[BUFSZ];
+
+        unstuck(u.ustuck);
+        if (!nohands(mtmp->data))
+            Sprintf(relbuf, "from %s grasp", s_suffix(mon_nam(mtmp)));
+        else
+            Sprintf(relbuf, "by %s", mon_nam(mtmp));
+        You("are released %s.", relbuf);
+    }
 }
 
 void
@@ -783,10 +817,9 @@ revive(struct obj *corpse, boolean by_hero)
             x = xy.x, y = xy.y;
     }
 
-    if ((mons[montype].mlet == S_EEL && !IS_POOL(levl[x][y].typ))
-        || (mons[montype].mlet == S_TROLL
-            && uwep && uwep->oartifact == ART_TROLLSBANE)) {
-        if (by_hero && cansee(x, y))
+    if (corpse->norevive
+        || (mons[montype].mlet == S_EEL && !IS_POOL(levl[x][y].typ))) {
+        if (cansee(x, y))
             pline("%s twitches feebly.",
                 upstart(corpse_xname(corpse, (const char *) 0, CXN_PFX_THE)));
         return (struct monst *) 0;
@@ -962,6 +995,7 @@ unturn_dead(struct monst *mon)
     struct obj *otmp, *otmp2;
     struct monst *mtmp2;
     char owner[BUFSZ], corpse[BUFSZ];
+    unsigned save_norevive;
     boolean youseeit, different_type, is_u = (mon == &g.youmonst);
     int corpsenm, res = 0;
 
@@ -988,6 +1022,10 @@ unturn_dead(struct monst *mon)
         /* for a stack, only one is revived; if is_u, revive() calls
            useup() which calls update_inventory() but not encumber_msg() */
         corpsenm = otmp->corpsenm;
+        /* norevive applies to revive timer, not to explicit unturn_dead() */
+        save_norevive = otmp->norevive;
+        otmp->norevive = 0;
+
         if ((mtmp2 = revive(otmp, !g.context.mon_moving)) != 0) {
             ++res;
             /* might get revived as a zombie rather than corpse's monster */
@@ -1006,9 +1044,13 @@ unturn_dead(struct monst *mon)
                 pline("%s%s suddenly %s%s%s!", owner, corpse,
                       nonliving(mtmp2->data) ? "reanimates" : "comes alive",
                       different_type ? " as " : "",
-                      different_type ? an(pmname(mtmp2->data, Mgender(mtmp2))) : "");
+                      different_type ? an(pmname(mtmp2->data, Mgender(mtmp2)))
+                                     : "");
             else if (canseemon(mtmp2))
                 pline("%s suddenly appears!", Amonnam(mtmp2));
+        } else {
+            /* revival failed; corpse 'otmp' is intact */
+            otmp->norevive = save_norevive ? 1 : 0;
         }
     }
     if (is_u && res)
@@ -2574,6 +2616,12 @@ zapyourself(struct obj *obj, boolean ordinary)
         break;
     case WAN_OPENING:
     case SPE_KNOCK:
+        if (u.ustuck) {
+            /* zapping either self or holder/holdee [bhitm()] will release
+               holder's grasp from the hero or hero's grasp from holdee */
+            release_hold();
+            learn_it = TRUE;
+        }
         if (Punished) {
             learn_it = TRUE;
             unpunish();

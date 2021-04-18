@@ -91,7 +91,7 @@ struct sp_coder {
     struct mkroom *tmproomlist[MAX_NESTED_ROOMS + 1];
     boolean failed_room[MAX_NESTED_ROOMS + 1];
     int n_subroom;
-    int lvl_is_joined;
+    boolean lvl_is_joined;
     boolean check_inaccessibles;
     int allow_flips;
 };
@@ -132,7 +132,7 @@ typedef struct {
 typedef struct {
     Str_or_Len name, appear_as;
     short id;
-    aligntyp align;
+    unsigned int sp_amask; /* splev amask */
     packed_coord coord;
     xchar x, y, class, appear;
     schar peaceful, asleep;
@@ -159,7 +159,7 @@ typedef struct {
 typedef struct {
     packed_coord coord;
     xchar x, y;
-    aligntyp align;
+    unsigned int sp_amask; /* splev amask */
     xchar shrine;
 } altar;
 
@@ -185,7 +185,8 @@ typedef struct _room {
     Str_or_Len parent;
     xchar x, y, w, h;
     xchar xalign, yalign;
-    xchar rtype, chance, rlit, needfill, joined;
+    xchar rtype, chance, rlit, needfill;
+    boolean joined;
 } room;
 
 struct mapfragment {

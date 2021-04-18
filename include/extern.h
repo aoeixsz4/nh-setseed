@@ -214,7 +214,6 @@ extern void pushch(char);
 extern void savech(char);
 extern const char *key2extcmddesc(uchar);
 extern boolean bind_specialkey(uchar, const char *);
-extern uchar txt2key(char *);
 extern void parseautocomplete(char *, boolean);
 extern void reset_commands(boolean);
 extern void rhack(char *);
@@ -624,6 +623,7 @@ extern boolean On_W_tower_level(d_level *);
 extern boolean In_W_tower(int, int, d_level *);
 extern void find_hell(d_level *);
 extern void goto_hell(boolean, boolean);
+extern boolean single_level_branch(d_level *);
 extern void assign_level(d_level *, d_level *);
 extern void assign_rnd_level(d_level *, d_level *, int);
 extern unsigned int induced_align(int);
@@ -748,6 +748,9 @@ extern void makerogueghost(void);
 
 /* ### files.c ### */
 
+#if !defined(CROSSCOMPILE) || defined(CROSSCOMPILE_TARGET)
+extern int l_get_config_errors(lua_State *);
+#endif
 extern char *fname_encode(const char *, char, char *, char *, int);
 extern char *fname_decode(char, char *, char *, int);
 extern const char *fqname(const char *, int, int);
@@ -780,6 +783,7 @@ extern void nh_compress(const char *);
 extern void nh_uncompress(const char *);
 extern boolean lock_file(const char *, int, int);
 extern void unlock_file(const char *);
+extern boolean parse_config_line(char *);
 #ifdef USER_SOUNDS
 extern boolean can_read_file(const char *);
 #endif
@@ -789,6 +793,7 @@ extern int config_error_done(void);
 extern boolean read_config_file(const char *, int);
 extern void check_recordfile(const char *);
 extern void read_wizkit(void);
+extern boolean parse_conf_str(const char *str, boolean (*proc)(char *));
 extern int read_sym_file(int);
 extern int parse_sym_line(char *, int);
 extern void paniclog(const char *, const char *);
@@ -948,7 +953,7 @@ extern void strbuf_append(strbuf_t *, const char *);
 extern void strbuf_reserve(strbuf_t *, int);
 extern void strbuf_empty(strbuf_t *);
 extern void strbuf_nl_to_crlf(strbuf_t *);
-extern char *nonconst(const char *, char *);
+extern char *nonconst(const char *, char *, size_t);
 extern int swapbits(int, int, int);
 extern void shuffle_int_array(int *, int);
 /* note: the snprintf CPP wrapper includes the "fmt" argument in "..."
@@ -1028,6 +1033,7 @@ extern int count_unidentified(struct obj *);
 extern void identify_pack(int, boolean);
 extern void learn_unseen_invent(void);
 extern void update_inventory(void);
+extern int doperminv(void);
 extern void prinv(const char *, struct obj *, long);
 extern char *xprname(struct obj *, const char *, char, boolean, long, long);
 extern int ddoinv(void);
@@ -1054,6 +1060,7 @@ extern void useupf(struct obj *, long);
 extern char *let_to_name(char, boolean, boolean);
 extern void free_invbuf(void);
 extern void reassign(void);
+extern boolean check_invent_gold(const char *);
 extern int doorganize(void);
 extern void free_pickinv_cache(void);
 extern int count_unpaid(struct obj *);
@@ -1381,7 +1388,7 @@ extern int cmap_to_type(int);
 /* ### mon.c ### */
 
 extern void mon_sanity_check(void);
-extern boolean zombie_maker(struct permonst *);
+extern boolean zombie_maker(struct monst *);
 extern int zombie_form(struct permonst *);
 extern int m_poisongas_ok(struct monst *);
 extern int undead_to_corpse(int);
@@ -1498,7 +1505,7 @@ extern boolean olfaction(struct permonst *);
 /* ### monmove.c ### */
 
 extern boolean itsstuck(struct monst *);
-extern boolean mb_trapped(struct monst *);
+extern boolean mb_trapped(struct monst *, boolean);
 extern boolean monhaskey(struct monst *, boolean);
 extern void mon_regen(struct monst *, boolean);
 extern int dochugw(struct monst *);
@@ -1657,6 +1664,7 @@ extern int l_obj_register(lua_State *);
 
 #if !defined(CROSSCOMPILE) || defined(CROSSCOMPILE_TARGET)
 extern lua_State * nhl_init(void);
+extern void nhl_done(lua_State *);
 extern boolean nhl_loadlua(lua_State *, const char *);
 extern boolean load_lua(const char *);
 extern void nhl_error(lua_State *, const char *) NORETURN;
@@ -1791,10 +1799,12 @@ extern int shiny_obj(char);
 /* ### options.c ### */
 
 extern boolean match_optname(const char *, const char *, int, boolean);
+extern uchar txt2key(char *);
 extern void initoptions(void);
 extern void initoptions_init(void);
 extern void initoptions_finish(void);
 extern boolean parseoptions(char *, boolean, boolean);
+extern char *get_option_value(const char *);
 extern int doset(void);
 extern int dotogglepickup(void);
 extern void option_help(void);
@@ -1806,6 +1816,7 @@ extern void oc_to_str(char *, char *);
 extern void add_menu_cmd_alias(char, char);
 extern char get_menu_cmd_key(char);
 extern char map_menu_cmd(char);
+extern char *collect_menu_keys(char *, unsigned, boolean);
 extern void show_menu_controls(winid, boolean);
 extern void assign_warnings(uchar *);
 extern char *nh_getenv(const char *);
@@ -3142,6 +3153,7 @@ extern int dowrite(struct obj *);
 
 extern void learnwand(struct obj *);
 extern int bhitm(struct monst *, struct obj *);
+extern void release_hold(void);
 extern void probe_monster(struct monst *);
 extern boolean get_obj_location(struct obj *, xchar *, xchar *, int);
 extern boolean get_mon_location(struct monst *, xchar *, xchar *, int);

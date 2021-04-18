@@ -1,4 +1,4 @@
-/* NetHack 3.7	apply.c	$NHDT-Date: 1611182249 2021/01/20 22:37:29 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.337 $ */
+/* NetHack 3.7	apply.c	$NHDT-Date: 1615158480 2021/03/07 23:08:00 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.340 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -1452,7 +1452,7 @@ use_lamp(struct obj *obj)
     if ((!Is_candle(obj) && obj->age == 0)
         || (obj->otyp == MAGIC_LAMP && obj->spe == 0)) {
         if (obj->otyp == BRASS_LANTERN)
-            Your("lamp has run out of power.");
+            Your("lantern is out of power.");
         else
             pline("This %s has no oil.", xname(obj));
         return;
@@ -3118,8 +3118,12 @@ use_pole(struct obj *obj)
     /* Attack the monster there */
     g.bhitpos = cc;
     if ((mtmp = m_at(g.bhitpos.x, g.bhitpos.y)) != (struct monst *) 0) {
-        if (attack_checks(mtmp, uwep))
-            return res;
+        if (attack_checks(mtmp, uwep)) /* can attack proceed? */
+            /* no, abort the attack attempt; result depends on
+               res: 1 => polearm became wielded, 0 => already wielded;
+               g.context.move: 1 => discovered hidden monster at target spot,
+               0 => answered 'n' to "Really attack?" prompt */
+            return res || g.context.move;
         if (overexertion())
             return 1; /* burn nutrition; maybe pass out */
         g.context.polearm.hitmon = mtmp;
@@ -3476,12 +3480,19 @@ do_break_wand(struct obj *obj)
     affects_objects = FALSE;
 
     switch (obj->otyp) {
+    case WAN_OPENING:
+        if (u.ustuck) {
+            release_hold();
+            if (obj->dknown)
+                makeknown(WAN_OPENING);
+            goto discard_broken_wand;
+        }
+        /*FALLTHRU*/
     case WAN_WISHING:
     case WAN_NOTHING:
     case WAN_LOCKING:
     case WAN_PROBING:
     case WAN_ENLIGHTENMENT:
-    case WAN_OPENING:
     case WAN_SECRET_DOOR_DETECTION:
         pline(nothing_else_happens);
         goto discard_broken_wand;
@@ -3498,7 +3509,7 @@ do_break_wand(struct obj *obj)
         dmg *= 2;
         /*FALLTHRU*/
     case WAN_MAGIC_MISSILE:
-    wanexpl:
+ wanexpl:
         explode(u.ux, u.uy, -(obj->otyp), dmg, WAND_CLASS, expltype);
         makeknown(obj->otyp); /* explode describes the effect */
         goto discard_broken_wand;
@@ -3629,7 +3640,7 @@ do_break_wand(struct obj *obj)
     if (obj->otyp == WAN_LIGHT)
         litroom(TRUE, obj); /* only needs to be done once */
 
-discard_broken_wand:
+ discard_broken_wand:
     obj = g.current_wand; /* [see dozap() and destroy_item()] */
     g.current_wand = 0;
     if (obj)

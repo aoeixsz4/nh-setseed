@@ -1,4 +1,4 @@
-/* NetHack 3.7	options.c	$NHDT-Date: 1612431350 2021/02/04 09:35:50 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.500 $ */
+/* NetHack 3.7	options.c	$NHDT-Date: 1613723080 2021/02/19 08:24:40 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.508 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2008. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -224,6 +224,10 @@ static const menu_cmd_t default_menu_cmd_info[] = {
                             "Unselect all items on current page" },
     { "menu_search",        MENU_SEARCH,
                             "Search and invert matching items" },
+    { "menu_shift_right",   MENU_SHIFT_RIGHT,
+                            "Pan current page to right (perm_invent only)" },
+    { "menu_shift_left",    MENU_SHIFT_LEFT,
+                            "Pan current page to left (perm_invent only)" },
     { (char *) 0, '\0', (char *) 0 }
 };
 
@@ -241,7 +245,8 @@ static void complain_about_duplicate(int);
 static int length_without_val(const char *, int len);
 static void determine_ambiguities(void);
 static int check_misc_menu_command(char *, char *);
-int spcfn_misc_menu_cmd(int, int, boolean, char *, char *);
+static int shared_menu_optfn(int, int, boolean, char *, char *);
+static int spcfn_misc_menu_cmd(int, int, boolean, char *, char *);
 
 static const char *attr2attrname(int);
 static void basic_menu_colors(boolean);
@@ -305,7 +310,7 @@ extern char *curses_fmt_attrs(char *);
  **********************************
  */
 boolean
-parseoptions(register char *opts,boolean tinitial, boolean tfrom_file)
+parseoptions(register char *opts, boolean tinitial, boolean tfrom_file)
 {
     char *op;
     boolean negated, got_match = FALSE;
@@ -356,12 +361,11 @@ parseoptions(register char *opts,boolean tinitial, boolean tfrom_file)
         has_val = TRUE;
 #endif
         optlen = optlen_wo_val;
-    }
 #if 0
-    else {
+    } else {
         has_val = FALSE;
-    }
 #endif
+    }
 
     for (i = 0; i < OPTCOUNT; ++i) {
         got_match = FALSE;
@@ -475,6 +479,8 @@ parseoptions(register char *opts,boolean tinitial, boolean tfrom_file)
 
     if (optresult == optn_silenterr)
         return FALSE;
+    if (got_match && optresult == optn_err)
+        return FALSE;
     if (optresult == optn_ok)
         return retval;
 
@@ -483,7 +489,7 @@ parseoptions(register char *opts,boolean tinitial, boolean tfrom_file)
     return FALSE;
 }
 
-int
+static int
 check_misc_menu_command(char *opts, char *op UNUSED)
 {
     int i;
@@ -712,8 +718,9 @@ optfn_boulder(int optidx UNUSED, int req, boolean negated UNUSED,
                initoptions_finish(), after all symset options
                have been processed */
             if (!g.opt_initial) {
-                nhsym sym = get_othersym(
-                    SYM_BOULDER, Is_rogue_level(&u.uz) ? ROGUESET : PRIMARY);
+                nhsym sym = get_othersym(SYM_BOULDER,
+                                         Is_rogue_level(&u.uz) ? ROGUESET
+                                                               : PRIMARY);
 
                 if (sym)
                     g.showsyms[SYM_BOULDER + SYM_OFF_X] = sym;
@@ -1460,9 +1467,11 @@ optfn_map_mode(int optidx, int req, boolean negated, char *opts, char *op)
     return optn_ok;
 }
 
+/* all the key assignment options for menu_* commands are identical
+   but optlist.h treats them as distinct rather than sharing one */
 static int
-optfn_menu_deselect_all(int optidx UNUSED, int req, boolean negated UNUSED,
-                        char *opts, char *op UNUSED)
+shared_menu_optfn(int optidx UNUSED, int req, boolean negated UNUSED,
+                   char *opts, char *op)
 {
     if (req == do_init) {
         return optn_ok;
@@ -1484,50 +1493,97 @@ optfn_menu_deselect_all(int optidx UNUSED, int req, boolean negated UNUSED,
 }
 
 static int
-optfn_menu_deselect_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                         char *opts, char *op UNUSED)
+optfn_menu_deselect_all(int optidx, int req, boolean negated,
+                        char *opts, char *op)
 {
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
+    return shared_menu_optfn(optidx, req, negated, opts, op);
 }
 
 static int
-optfn_menu_first_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                      char *opts, char *op UNUSED)
+optfn_menu_deselect_page(int optidx, int req, boolean negated,
+                         char *opts, char *op)
 {
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
+    return shared_menu_optfn(optidx, req, negated, opts, op);
 }
+
+static int
+optfn_menu_first_page(int optidx, int req, boolean negated,
+                      char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_invert_all(int optidx, int req, boolean negated,
+                      char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_invert_page(int optidx, int req, boolean negated,
+                       char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_last_page(int optidx, int req, boolean negated,
+                     char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_next_page(int optidx , int req, boolean negated,
+                     char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_previous_page(int optidx, int req, boolean negated,
+                         char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_search(int optidx, int req, boolean negated,
+                  char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_select_all(int optidx, int req, boolean negated,
+                      char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_select_page(int optidx, int req, boolean negated,
+                       char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_shift_left(int optidx, int req, boolean negated,
+                      char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+static int
+optfn_menu_shift_right(int optidx, int req, boolean negated,
+                       char *opts, char *op)
+{
+    return shared_menu_optfn(optidx, req, negated, opts, op);
+}
+
+/* end of shared key assignments for menu commands */
 
 static int
 optfn_menu_headings(int optidx, int req, boolean negated UNUSED,
@@ -1546,8 +1602,7 @@ optfn_menu_headings(int optidx, int req, boolean negated UNUSED,
         tmpattr = match_str2attr(opts, TRUE);
         if (tmpattr == -1)
             return optn_err;
-        else
-            iflags.menu_headings = tmpattr;
+        iflags.menu_headings = tmpattr;
         return optn_ok;
     }
     if (req == get_val) {
@@ -1558,190 +1613,6 @@ optfn_menu_headings(int optidx, int req, boolean negated UNUSED,
     }
     if (req == do_handler) {
         return handler_menu_headings();
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_invert_all(int optidx UNUSED, int req, boolean negated UNUSED,
-                      char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_invert_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                       char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_last_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                     char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_next_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                     char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_previous_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                         char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_search(int optidx UNUSED, int req, boolean negated UNUSED,
-                  char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_select_all(int optidx UNUSED, int req, boolean negated UNUSED,
-                      char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
-    }
-    return optn_ok;
-}
-
-static int
-optfn_menu_select_page(int optidx UNUSED, int req, boolean negated UNUSED,
-                       char *opts, char *op UNUSED)
-{
-    if (req == do_init) {
-        return optn_ok;
-    }
-    if (req == do_set) {
-        int res = check_misc_menu_command(opts, op);
-
-        if (res < 0)
-            return optn_err;
-        return spcfn_misc_menu_cmd(res, req, negated, opts, op);
-    }
-    if (req == get_val) {
-        if (!opts)
-            return optn_err;
-        Sprintf(opts, "%s", to_be_done);
-        return optn_ok;
     }
     return optn_ok;
 }
@@ -2980,8 +2851,10 @@ optfn_runmode(int optidx, int req, boolean negated, char *opts, char *op)
                                  allopt[optidx].name, op);
                 return optn_err;
             }
-        } else
+        } else {
+            config_error_add("Value is mandatory for %s", allopt[optidx].name);
             return optn_err;
+        }
         return optn_ok;
     }
     if (req == get_val) {
@@ -3008,44 +2881,61 @@ optfn_scores(int optidx, int req, boolean negated, char *opts, char *op)
         if ((op = string_for_opt(opts, FALSE)) == empty_optstr)
             return optn_err;
 
+        /* 3.7: earlier versions left old values for unspecified arguments
+           if player's scores:foo option only specified some of the three;
+           in particular, attempting to use 'scores:own' rather than
+           'scores:0 top/0 around/own' didn't work as intended */
+        flags.end_top = flags.end_around = 0, flags.end_own = FALSE;
+
+        if (negated)
+            op = eos(op);
+
         while (*op) {
             int inum = 1;
+
+            negated = (*op == '!');
+            if (negated)
+                op++;
 
             if (digit(*op)) {
                 inum = atoi(op);
                 while (digit(*op))
                     op++;
-            } else if (*op == '!') {
-                negated = !negated;
-                op++;
             }
             while (*op == ' ')
                 op++;
 
-            switch (*op) {
+            switch (lowc(*op)) {
             case 't':
-            case 'T':
-                flags.end_top = inum;
+                flags.end_top = negated ? 0 : inum;
                 break;
             case 'a':
-            case 'A':
-                flags.end_around = inum;
+                flags.end_around = negated ? 0 : inum;
                 break;
             case 'o':
-            case 'O':
-                flags.end_own = !negated;
+                flags.end_own = (negated || !inum) ? FALSE : TRUE;
                 break;
+            case 'n': /* none */
+                flags.end_top = flags.end_around = 0, flags.end_own = FALSE;
+                break;
+            case '-':
+                if (digit(*(op + 1))) {
+                    config_error_add(
+                       "Values for %s:top and %s:around must not be negative",
+                                     allopt[optidx].name,
+                                     allopt[optidx].name);
+                    return optn_silenterr;
+                }
+                /*FALLTHRU*/
             default:
                 config_error_add("Unknown %s parameter '%s'",
                                  allopt[optidx].name, op);
-                return optn_err;
+                return optn_silenterr;
             }
-            /* "3a" is sufficient but accept "3around" (or "3abracadabra")
-             */
+            /* "3a" is sufficient but accept "3around" (or "3abracadabra") */
             while (letter(*op))
                 op++;
-            /* t, a, and o can be separated by space(s) or slash or both
-             */
+            /* t, a, and o can be separated by space(s) or slash or both */
             while (*op == ' ')
                 op++;
             if (*op == '/')
@@ -3056,8 +2946,17 @@ optfn_scores(int optidx, int req, boolean negated, char *opts, char *op)
     if (req == get_val) {
         if (!opts)
             return optn_err;
-        Sprintf(opts, "%d top/%d around%s", flags.end_top, flags.end_around,
-                flags.end_own ? "/own" : "");
+        *opts = '\0';
+        if (flags.end_top > 0)
+            Sprintf(opts, "%d top", flags.end_top);
+        if (flags.end_around > 0)
+            Sprintf(eos(opts), "%s%d around",
+                    (flags.end_top > 0) ? "/" : "", flags.end_around);
+        if (flags.end_own)
+            Sprintf(eos(opts), "%sown",
+                    (flags.end_top > 0 || flags.end_around > 0) ? "/" : "");
+        if (!*opts)
+            Strcpy(opts, "none");
         return optn_ok;
     }
     return optn_ok;
@@ -3997,13 +3896,15 @@ optfn_windowborders(int optidx, int req, boolean negated, char *opts, char *op)
                 itmp = 0; /* Off */
             else if (op == empty_optstr)
                 itmp = 1; /* On */
-            else /* Value supplied; expect 0 (off), 1 (on), or 2 (auto) */
+            else /* Value supplied; expect 0 (off), 1 (on), 2 (auto)
+                  * or 3 (on for most windows, off for perm_invent)
+                  * or 4 (auto for most windows, off for perm_invent) */
                 itmp = atoi(op);
 
-            if (itmp < 0 || itmp > 2) {
-                config_error_add("Invalid %s (should be 0, 1, or 2): %s",
+            if (itmp < 0 || itmp > 4) {
+                config_error_add("Invalid %s (should be within 0 to 4): %s",
                                  allopt[optidx].name, opts);
-                retval = optn_err;
+                retval = optn_silenterr;
             } else {
                 iflags.wc2_windowborders = itmp;
             }
@@ -4017,7 +3918,11 @@ optfn_windowborders(int optidx, int req, boolean negated, char *opts, char *op)
                 (iflags.wc2_windowborders == 0) ? "0=off"
                 : (iflags.wc2_windowborders == 1) ? "1=on"
                   : (iflags.wc2_windowborders == 2) ? "2=auto"
-                    : defopt);
+                    : (iflags.wc2_windowborders == 3)
+                      ? "3=on, except off for perm_invent"
+                      : (iflags.wc2_windowborders == 4)
+                        ? "4=auto, except off for perm_invent"
+                        : defopt);
         return optn_ok;
     }
     return optn_ok;
@@ -4470,6 +4375,7 @@ optfn_boolean(int optidx, int req, boolean negated, char *opts, char *op)
             if (iflags.use_color)
                 g.opt_need_redraw = TRUE; /* darkroom refresh */
             break;
+        case opt_wizmgender:
         case opt_showrace:
         case opt_use_inverse:
         case opt_hilite_pile:
@@ -4523,6 +4429,13 @@ optfn_boolean(int optidx, int req, boolean negated, char *opts, char *op)
             iflags.prev_decor = STONE;
             break;
         }
+
+        /* boolean value has been toggled but some option changes can
+           still be pending at this point (mainly for opt_need_redraw);
+           give the toggled message now regardless */
+        pline("'%s' option toggled %s.", allopt[optidx].name,
+              !negated ? "on" : "off");
+
         return optn_ok;
     }
     if (req == get_val) {
@@ -4534,7 +4447,7 @@ optfn_boolean(int optidx, int req, boolean negated, char *opts, char *op)
     return optn_ok;
 }
 
-int
+static int
 spcfn_misc_menu_cmd(int midx, int req, boolean negated, char *opts, char *op)
 {
     if (req == do_init) {
@@ -4545,10 +4458,7 @@ spcfn_misc_menu_cmd(int midx, int req, boolean negated, char *opts, char *op)
             bad_negation(default_menu_cmd_info[midx].name, FALSE);
             return optn_err;
         } else if ((op = string_for_opt(opts, FALSE)) != empty_optstr) {
-            char c, op_buf[BUFSZ];
-
-            escapes(op, op_buf);
-            c = *op_buf;
+            char c = txt2key(op);
 
             if (illegal_menu_cmd_key((uchar) c))
                 return optn_err;
@@ -4749,8 +4659,12 @@ handler_menu_headings(void)
 {
     int mhattr = query_attr("How to highlight menu headings:");
 
-    if (mhattr != -1)
+    if (mhattr != -1) {
         iflags.menu_headings = mhattr;
+        /* header highlighting affects persistent inventory display */
+        if (iflags.perm_invent)
+            update_inventory();
+    }
     return optn_ok;
 }
 
@@ -4926,8 +4840,7 @@ handler_pickup_types(void)
     char buf[BUFSZ];
 
     /* parseoptions will prompt for the list of types */
-    (void) parseoptions(strcpy(buf, "pickup_types"),
-                        FALSE, FALSE);
+    (void) parseoptions(strcpy(buf, "pickup_types"), FALSE, FALSE);
     return optn_ok;
 }
 
@@ -4987,6 +4900,9 @@ handler_sortloot(void)
         if (n > 1 && c == flags.sortloot)
             c = sortl_pick[1].item.a_char;
         flags.sortloot = c;
+        /* changing to or from 'f' affects persistent inventory display */
+        if (iflags.perm_invent)
+            update_inventory();
         free((genericptr_t) sortl_pick);
     }
     destroy_nhwindow(tmpwin);
@@ -5388,7 +5304,7 @@ handler_menu_colors(void)
            inventory window; we don't track whether an actual changed
            occurred, so just assume there was one and that it matters;
            if we're wrong, a redundant update is cheap... */
-        if (iflags.use_menu_color)
+        if (iflags.use_menu_color && iflags.perm_invent)
             update_inventory();
 
         /* menu colors aren't being used; if any are defined, remind
@@ -5849,6 +5765,107 @@ escapes(const char *cp, /* might be 'tp', updating in place */
     *tp = '\0';
 }
 
+/* returns a one-byte character from the text; may change txt[];
+   moved from cmd.c in order to get access to escapes() */
+uchar
+txt2key(char *txt)
+{
+    uchar uc;
+    boolean makemeta = FALSE;
+
+    txt = trimspaces(txt);
+    if (!*txt)
+        return '\0';
+
+    /* simple character */
+    if (!txt[1])
+        return (uchar) txt[0];
+
+    /* a few special entries */
+    if (!strcmp(txt, "<enter>"))
+        return '\n';
+    if (!strcmp(txt, "<space>"))
+        return ' ';
+    if (!strcmp(txt, "<esc>"))
+        return '\033';
+
+    /* handle things like \b and \7 and \mX */
+    if (*txt == '\\') {
+        char tbuf[QBUFSZ];
+
+        if (strlen(txt) >= sizeof tbuf)
+            txt[sizeof tbuf - 1] = '\0';
+        escapes(txt, tbuf);
+        return *tbuf;
+    }
+
+    /* control and meta keys */
+    if (highc(*txt) == 'M') {
+        /*
+         * M <nothing>             return 'M'
+         * M - <nothing>           return M-'-'
+         * M <other><nothing>      return M-<other>
+         * otherwise M is pending until after ^/C- processing.
+         * Since trailing spaces are discarded, the only way to
+         * specify M-' ' is via "160".
+         */
+        if (!txt[1])
+            return (uchar) *txt;
+        /* skip past 'M' or 'm' and maybe '-' */
+        ++txt;
+        if (*txt == '-' && txt[1])
+            ++txt;
+        if (!txt[1])
+            return M((uchar) *txt);
+        makemeta = TRUE;
+    }
+    if (*txt == '^' || highc(*txt) == 'C') {
+        /*
+         * C <nothing>             return 'C' or M-'C'
+         * C - <nothing>           return '-' or M-'-'
+         * C [-] <other><nothing>  return C-<other> or M-C-<other>
+         * C [-] ?                 return <rubout>
+         * otherwise return C-<other> or M-C-<other>
+         */
+        uc = (uchar) *txt;
+        if (!txt[1])
+            return makemeta ? M(uc) : uc;
+        ++txt;
+        /* unlike M-x, lots of values of x are invalid for C-x;
+           checking and rejecting them is not worthwhile; GIGO;
+           we do accept "^-x" as synonym for "^x" or "C-x" */
+        if (*txt == '-' && txt[1])
+            ++txt;
+        /* and accept ^?, which gets used despite not being a control char */
+        if (*txt == '?')
+            return (uchar) (makemeta ? '\377' : '\177'); /* rubout/delete */
+        uc = C((uchar) *txt);
+        return makemeta ? M(uc) : uc;
+    }
+    if (makemeta && *txt)
+        return M((uchar) *txt);
+
+    /* FIXME: should accept single-quote single-character single-quote
+       and probably single-quote backslash octal-digits single-quote;
+       if we do that, the M- and C- results should be pending until
+       after, so that C-'X' becomes valid for ^X */
+
+    /* ascii codes: must be three-digit decimal */
+    if (*txt >= '0' && *txt <= '9') {
+        uchar key = 0;
+        int i;
+
+        for (i = 0; i < 3; i++) {
+            if (txt[i] < '0' || txt[i] > '9')
+                return '\0';
+            key = 10 * key + txt[i] - '0';
+        }
+        return key;
+    }
+
+    return '\0';
+}
+
 /*
  **********************************
  *
@@ -6089,7 +6106,7 @@ initoptions_finish(void)
         }
     }
 #endif
-
+    g.opt_initial = FALSE;
     return;
 }
 
@@ -7094,6 +7111,46 @@ map_menu_cmd(char ch)
     return ch;
 }
 
+/* get keystrokes that are used for menu scrolling operations which apply;
+   printable: for use in a prompt, non-printable: for yn_function() choices */
+char *
+collect_menu_keys(
+    char *outbuf,        /* at least big enough for 6 "M-^X" sequences +'\0'*/
+    unsigned scrollmask, /* 1: backwards, "^<"; 2: forwards, ">|";
+                          * 4: left, "{";       8: right, "}"; */
+    boolean printable)   /* False: output is string of raw characters,
+                          * True: output is a string of visctrl() sequences;
+                          * matters iff user has mapped any menu scrolling
+                          * commands to control or meta characters */
+{
+    struct menuscrollinfo {
+        char cmdkey;
+        uchar maskindx;
+    };
+    static const struct menuscrollinfo scroll_keys[] = {
+        { MENU_FIRST_PAGE,    1 },
+        { MENU_PREVIOUS_PAGE, 1 },
+        { MENU_NEXT_PAGE,     2 },
+        { MENU_LAST_PAGE,     2 },
+        { MENU_SHIFT_LEFT,    4 },
+        { MENU_SHIFT_RIGHT,   8 },
+    };
+    int i;
+
+    outbuf[0] = '\0';
+    for (i = 0; i < SIZE(scroll_keys); ++i) {
+        if (scrollmask & scroll_keys[i].maskindx) {
+            char c = get_menu_cmd_key(scroll_keys[i].cmdkey);
+
+            if (printable)
+                Strcat(outbuf, visctrl(c));
+            else
+                (void) strkitten(outbuf, c);
+        }
+    }
+    return outbuf;
+}
+
 /* Returns the fid of the fruit type; if that type already exists, it
  * returns the fid of that one; if it does not exist, it adds a new fruit
  * type to the chain and returns the new one.
@@ -7355,6 +7412,34 @@ optfn_o_status_hilites(int optidx UNUSED, int req, boolean negated UNUSED,
     return optn_ok;
 }
 #endif /*STATUS_HILITES*/
+
+/* Get string value of configuration option.
+ * Currently handles only boolean and compound options.
+ */
+char *
+get_option_value(const char *optname)
+{
+    static char retbuf[BUFSZ];
+    boolean *bool_p;
+    int i;
+
+    for (i = 0; allopt[i].name != 0; i++)
+        if (!strcmp(optname, allopt[i].name)) {
+            if (allopt[i].opttyp == BoolOpt && (bool_p = allopt[i].addr) != 0) {
+                Sprintf(retbuf, "%s", *bool_p ? "true" : "false");
+                return retbuf;
+            } else if (allopt[i].opttyp == CompOpt && allopt[i].optfn) {
+                int reslt = optn_err;
+
+                reslt = (*allopt[i].optfn)(allopt[i].idx, get_val,
+                                           FALSE, retbuf, empty_optstr);
+                if (reslt == optn_ok && retbuf[0])
+                    return retbuf;
+                return (char *) 0;
+            }
+        }
+    return (char *) 0;
+}
 
 /* the 'O' command */
 int
@@ -7633,6 +7718,7 @@ show_menu_controls(winid win, boolean dolist)
     char buf[BUFSZ];
     const char *fmt, *arg;
     const struct xtra_cntrls *xcp;
+    boolean has_menu_shift = wc2_supported("menu_shift");
 
     /*
      * Relies on spaces to line things up in columns, so must be rendered
@@ -7642,11 +7728,16 @@ show_menu_controls(winid win, boolean dolist)
     putstr(win, 0, "Menu control keys:");
     if (dolist) { /* key bindings help: '?i' */
         int i;
+        char ch;
 
         fmt = "%-7s %s";
         for (i = 0; default_menu_cmd_info[i].desc; i++) {
+            ch = default_menu_cmd_info[i].cmd;
+            if ((ch == MENU_SHIFT_RIGHT
+                 || ch == MENU_SHIFT_LEFT) && !has_menu_shift)
+                continue;
             Sprintf(buf, fmt,
-                    visctrl(get_menu_cmd_key(default_menu_cmd_info[i].cmd)),
+                    visctrl(get_menu_cmd_key(ch)),
                     default_menu_cmd_info[i].desc);
             putstr(win, 0, buf);
         }
@@ -7688,6 +7779,16 @@ show_menu_controls(winid win, boolean dolist)
                 visctrl(get_menu_cmd_key(MENU_LAST_PAGE)),
                 "Last page");
         putstr(win, 0, buf);
+        if (has_menu_shift) {
+            Sprintf(buf, mc_fmt, "Pan view",
+                    visctrl(get_menu_cmd_key(MENU_SHIFT_RIGHT)),
+                    "Right (perm_invent only)");
+            putstr(win, 0, buf);
+            Sprintf(buf, mc_fmt, "",
+                    visctrl(get_menu_cmd_key(MENU_SHIFT_LEFT)),
+                    "Left");
+            putstr(win, 0, buf);
+        }
         putstr(win, 0, "");
         Sprintf(buf, mc_fmt, "Search",
                 visctrl(get_menu_cmd_key(MENU_SEARCH)),
@@ -8307,6 +8408,7 @@ static struct wc_Opt wc_options[] = {
     { "color", WC_COLOR },
     { "eight_bit_tty", WC_EIGHT_BIT_IN },
     { "hilite_pet", WC_HILITE_PET },
+    { "perm_invent", WC_PERM_INVENT },
     { "popup_dialog", WC_POPUP_DIALOG },
     { "player_selection", WC_PLAYER_SELECTION },
     { "preload_tiles", WC_PRELOAD_TILES },
@@ -8314,15 +8416,11 @@ static struct wc_Opt wc_options[] = {
     { "tile_file", WC_TILE_FILE },
     { "tile_width", WC_TILE_WIDTH },
     { "tile_height", WC_TILE_HEIGHT },
-    { "use_inverse", WC_INVERSE },
     { "align_message", WC_ALIGN_MESSAGE },
     { "align_status", WC_ALIGN_STATUS },
     { "font_map", WC_FONT_MAP },
     { "font_menu", WC_FONT_MENU },
     { "font_message", WC_FONT_MESSAGE },
-#if 0
-    {"perm_invent", WC_PERM_INVENT},
-#endif
     { "font_size_map", WC_FONTSIZ_MAP },
     { "font_size_menu", WC_FONTSIZ_MENU },
     { "font_size_message", WC_FONTSIZ_MESSAGE },
@@ -8334,6 +8432,7 @@ static struct wc_Opt wc_options[] = {
     { "scroll_amount", WC_SCROLL_AMOUNT },
     { "scroll_margin", WC_SCROLL_MARGIN },
     { "splash_screen", WC_SPLASH_SCREEN },
+    { "use_inverse", WC_INVERSE },
     { "vary_msgcount", WC_VARY_MSGCOUNT },
     { "windowcolors", WC_WINDOWCOLORS },
     { "mouse_support", WC_MOUSE_SUPPORT },
@@ -8341,21 +8440,22 @@ static struct wc_Opt wc_options[] = {
 };
 static struct wc_Opt wc2_options[] = {
     { "fullscreen", WC2_FULLSCREEN },
-    { "softkeyboard", WC2_SOFTKEYBOARD },
-    { "wraptext", WC2_WRAPTEXT },
-    { "use_darkgray", WC2_DARKGRAY },
-    { "hitpointbar", WC2_HITPOINTBAR },
+    { "guicolor", WC2_GUICOLOR },
     { "hilite_status", WC2_HILITE_STATUS },
+    { "hitpointbar", WC2_HITPOINTBAR },
+    { "menu_shift", WC2_MENU_SHIFT },
+    { "petattr", WC2_PETATTR },
+    { "softkeyboard", WC2_SOFTKEYBOARD },
     /* name shown in 'O' menu is different */
     { "status hilite rules", WC2_HILITE_STATUS },
     /* statushilites doesn't have its own bit */
     { "statushilites", WC2_HILITE_STATUS },
+    { "statuslines", WC2_STATUSLINES },
     { "term_cols", WC2_TERM_SIZE },
     { "term_rows", WC2_TERM_SIZE },
-    { "petattr", WC2_PETATTR },
-    { "guicolor", WC2_GUICOLOR },
-    { "statuslines", WC2_STATUSLINES },
+    { "use_darkgray", WC2_DARKGRAY },
     { "windowborders", WC2_WINDOWBORDERS },
+    { "wraptext", WC2_WRAPTEXT },
     { (char *) 0, 0L }
 };
 
