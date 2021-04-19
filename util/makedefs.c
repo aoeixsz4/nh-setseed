@@ -1251,7 +1251,7 @@ do_date(void)
         struct tm *tm = localtime((time_t *) &clocktim);
 
         Fprintf(ofp, "#define AMIGA_VERSION_STRING ");
-        Fprintf(ofp, "\"\\0$VER: NetHack %d.%d.%d (%d.%d.%d)\"\n",
+        Fprintf(ofp, "\"\\0$VER: Setseed NetHack %d.%d.%d (%d.%d.%d)\"\n",
                 VERSION_MAJOR, VERSION_MINOR, PATCHLEVEL,
                 tm->tm_mday, tm->tm_mon + 1, tm->tm_year + 1900);
     }

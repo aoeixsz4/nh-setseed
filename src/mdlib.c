@@ -293,7 +293,7 @@ version_id_string(char *outbuf, const char *build_date)
     Strcpy(&subbuf[1], PORT_SUB_ID);
 #endif
 
-    Sprintf(outbuf, "%s NetHack%s Version %s%s - last %s %s.", PORT_ID,
+    Sprintf(outbuf, "%s Setseed NetHack%s Version %s%s - last %s %s.", PORT_ID,
             subbuf, version_string(versbuf, "."), statusbuf,
             date_via_env ? "revision" : "build", build_date);
     return outbuf;
