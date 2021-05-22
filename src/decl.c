@@ -598,6 +598,7 @@ const struct instance_globals g_init = {
     UNDEFINED_VALUES, /* rngs */
     UNDEFINED_VALUES, /* seed */
     UNDEFINED_VALUES, /* user-supplied text seed */
+    UNDEFINED_VALUES, /* user-supplied seedlist name */
     RNG_CORE, /* default_rng */
 #endif
 

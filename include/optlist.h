@@ -415,8 +415,10 @@ opt_##a,
     NHOPTC(scroll_margin, 20, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
                 "scroll map when this far from the edge")
 #ifdef USE_CHACHA
-    NHOPTC(seed, 64, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
-           "up to 64 hexadecimal [0-9A-F] characters, to play a set non-scoring dungeon")
+    NHOPTC(seed, 44, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
+           "base64 representation of a 256-bit random seed (max 44 base64 characters), non-scoring setseed mode")
+    NHOPTC(seedlist, 32, opt_in, set_gameview, Yes, Yes, No, No, NoAlias,
+           "name of a shared seed-list for a scoring, seeded race")
 #endif
     NHOPTB(selectsaved, 0, opt_out, set_in_config, On, Yes, No, No, NoAlias,
                 &iflags.wc2_selectsaved)

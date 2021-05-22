@@ -3088,7 +3088,7 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
                version is preserved in logs etc., even if we added funny padding
                internally to deal with funky base64 encoding behaviour */
             strncpy(g.user_seed_opt, op, MAX_B64_RNG_SEED_LEN + 2);
-            for (i = len_decoded; i < sizeof(g.seed); i++) {
+            for (i = len_decoded; i < (int) sizeof(g.seed); i++) {
                 g.seed[i] = 0;
             }
             flags.setseed = TRUE;
@@ -3111,6 +3111,131 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
         }
 
         get_printable_seed(opts);
+
+        return optn_ok;
+    }
+    return optn_ok;
+}
+
+/* this is for shared seedlists for a setseed race between multiple contestants */
+static int
+optfn_seedlist(int optidx, int req, boolean negated, char *opts, char *op)
+{
+    long i, seedlist_index;
+    size_t line_len, len_encoded, len_decoded;
+    ssize_t read;
+    char seed_tmp[MAX_RNG_SEED_LEN + 1];
+    char tmpfile_name[BUFSZ * 2 + 2];
+    char *line = NULL, *endptr;
+#if defined(WIN32)
+    char tmp_name[BUFSZ];
+    char tmp_seedlist[BUFSZ];
+#endif
+    FILE *fp;
+
+    if (req == do_init) {
+        return optn_ok;
+    }
+    if (req == do_set) {
+        if (negated) {
+            flags.setseed = FALSE;
+            return optn_ok;
+        }
+        if ((op = string_for_env_opt(allopt[optidx].name, opts, FALSE))
+            != empty_optstr) {
+            /* save seedlist name */
+            strncpy(g.user_seedlist_opt, op, MAX_SEEDLIST_NAME_LEN + 2);
+            /* mb worth having a check up here that the seedlist actually exists? */
+
+            /* get seedlist_index */
+#if defined(WIN32)
+            static const char okchars[] =
+                "*ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
+            const char *legal = okchars;
+
+            ++legal; /* skip '*' wildcard character */
+            (void) fname_encode(legal, '%', g.plname, tmp_name, sizeof tmp_name);
+            (void) fname_encode(legal, '%', g.user_seedlist_opt, tmp_seedlist, sizeof tmp_seedlist);
+            sprintf(tmpfile_name, "%s-%s", tmp_name, tmp_seedlist);
+#else
+            sprintf(tmpfile_name, "%s-%s", g.plname, g.user_seedlist_opt);
+#endif
+            fp = fopen_datafile(tmpfile_name, "r", SAVEPREFIX);
+            if (fp) {
+                /* TODO: remove glibc dependency for better cross-platform compat */
+                read = getline(&line, &line_len, fp);
+                if (read == -1) return optn_err;
+                seedlist_index = strtol(line, &endptr, 10);
+                line = NULL;
+                fclose(fp);
+            } else {
+                seedlist_index = 0;
+            }
+
+            /* open actual seedlist */
+#if defined(WIN32)
+            fp = fopen_datafile(tmp_seedlist, "r", SCOREPREFIX);
+#else
+            fp = fopen_datafile(g.user_seedlist_opt, "r", SCOREPREFIX);
+#endif
+            if (!fp)
+                panic("could not open seedlist named %s", g.user_seedlist_opt);
+            for (i = 0; (read = getline(&line, &line_len, fp)) != -1 && i < (int) seedlist_index; i++);
+                /* nop */
+            if (read == -1)
+                panic("you have exhausted all %d seeds in list %s", seedlist_index, g.user_seedlist_opt);
+
+            /* instead of copying the list seed directly, treat it as
+               base64-encoded and decode it for the actual seed,
+               we also need to remove a newline */
+            line_len = strlen(line);
+            line[line_len-1] = '\0';
+            len_encoded = strlen(line);
+
+            /* ensure seed is valid base64 */
+            if (!is_valid_b64(line, strlen(line)))
+                panic("seedlist %s contains invalid b64: `%s'", g.user_seedlist_opt, line);
+
+            /* if padding '=' bytes are used, MAX_B64_RNG_SEED_LEN + 1 is allowed,
+               but *only* if the last character is '=' - anything else would result in >32 byte seed */
+            if (len_encoded > MAX_B64_RNG_SEED_LEN
+                && !(len_encoded == MAX_B64_RNG_SEED_LEN + 1 && op[len_encoded - 1] == '='))
+                panic("seedlist %s contains too-long seed (%d): maximum %d bytes, or %d if final byte is '='",
+                                 g.user_seedlist_opt, len_encoded, MAX_B64_RNG_SEED_LEN, MAX_B64_RNG_SEED_LEN + 1);
+
+            /* decode base64-encoded seed, pad result with null bytes if it's
+               shorter than 32-bytes when decoded */
+            len_decoded = b64_decode(line, seed_tmp, len_encoded);
+            strncpy(g.seed, seed_tmp, sizeof(g.seed));
+
+            /* save the seed as the user specified it, so that their original
+               version is preserved in logs etc., even if we added funny padding
+               internally to deal with funky base64 encoding behaviour */
+            for (i = len_decoded; i < (int) sizeof(g.seed); i++) {
+                g.seed[i] = 0;
+            }
+
+            /* save incremented seedlist_index */
+            fp = fopen_datafile(tmpfile_name, "w", SAVEPREFIX);
+
+            /* if this fails we have some other problems,
+               so need to do something other than return optn_err...
+               TODO: fixme */
+            if (!fp) 
+                panic("couldn't save incremented seed-index in file %s", tmpfile_name);
+            fprintf(fp, "%ld\n", seedlist_index + 1);
+            fclose(fp);
+
+            return optn_ok;
+        } else {
+            return optn_silenterr;
+        }
+    }
+    if (req == get_val) {
+        if (!opts)
+            return optn_err;
+
+        Strcpy(opts, g.user_seedlist_opt);
 
         return optn_ok;
     }

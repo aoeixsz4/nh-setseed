@@ -741,6 +741,7 @@ struct chacha_rng_t {
 /* extra b64 byte needed for overflow of the last four bits,
    32x 8 bit seed = 256 bits, 32*8/6 gives only 42x 6 bit = 252 bits */
 #define MAX_B64_RNG_SEED_LEN (1 + (MAX_RNG_SEED_LEN * 8) / 6)
+#define MAX_SEEDLIST_NAME_LEN 126
 
 #else
 
@@ -1207,6 +1208,7 @@ struct instance_globals {
     struct chacha_rng_t rngs[RNG_INDEX_MAX];
     char seed[32];
     char user_seed_opt[MAX_B64_RNG_SEED_LEN + 2];
+    char user_seedlist_opt[MAX_SEEDLIST_NAME_LEN + 2];
     int default_rng;
 #endif
 
