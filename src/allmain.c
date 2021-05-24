@@ -208,6 +208,8 @@ moveloop(boolean resuming)
                     /* once-per-turn things go here */
                     /********************************/
 
+                    l_nhcore_call(NHCORE_MOVELOOP_TURN);
+
                     if (Glib)
                         glibr();
                     nh_timeout();
@@ -657,6 +659,8 @@ newgame(void)
 
     g.default_rng = prev_default_rng;
 
+    l_nhcore_init();
+
 #ifndef NO_SIGNAL
     (void) signal(SIGINT, (SIG_RET_TYPE) done1);
 #endif
@@ -733,7 +737,7 @@ welcome(boolean new_game) /* false => restoring an old game */
                    : "%s %s, the%s %s %s, welcome back to NetHack!",
           Hello((struct monst *) 0), g.plname, buf, g.urace.adj,
           (currentgend && g.urole.name.f) ? g.urole.name.f : g.urole.name.m);
-    
+
 #ifdef LIVELOGFILE
     if (new_game) {
         livelog_write_string(LL_START, "entered the Dungeons of Doom");
@@ -741,6 +745,8 @@ welcome(boolean new_game) /* false => restoring an old game */
         livelog_write_string(LL_DEBUG, "resumed save");
     }
 #endif
+
+    l_nhcore_call(new_game ? NHCORE_START_NEW_GAME : NHCORE_RESTORE_OLD_GAME);
 }
 
 #ifdef POSITIONBAR
