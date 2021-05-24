@@ -22,9 +22,9 @@ COMPRESSBIN="/bin/gzip"
 NH_GIT="/home/build/setseed"
 NH_BRANCH="master" # will probably need to make another hdf branch for this one
 # HACKDIR from include/config.h; aka nethack subdir inside chroot
-NHSUBDIR="setseed.33"
+NHSUBDIR="setseed.35"
 # VAR_PLAYGROUND from include/unixconf.h
-NH_VAR_PLAYGROUND="/setseed.33/var/"
+NH_VAR_PLAYGROUND="/setseed.35/var/"
 # only define this if dgl was configured with --enable-sqlite
 SQLITE_DBFILE="/dgldir/dgamelaunch.db"
 # END OF CONFIG
@@ -51,8 +51,8 @@ set -e
 umask 022
 
 echo "Creating inprogress and extrainfo directories"
-mkdir -p "$NAO_CHROOT/dgldir/inprogress-seed.33"
-chown "$USRGRP" "$NAO_CHROOT/dgldir/inprogress-seed.33"
+mkdir -p "$NAO_CHROOT/dgldir/inprogress-seed.35"
+chown "$USRGRP" "$NAO_CHROOT/dgldir/inprogress-seed.35"
 mkdir -p "$NAO_CHROOT/dgldir/extrainfo-seed"
 chown "$USRGRP" "$NAO_CHROOT/dgldir/extrainfo-seed"
 
