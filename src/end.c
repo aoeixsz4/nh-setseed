@@ -1794,6 +1794,8 @@ void
 nh_terminate(int status)
 {
     g.program_state.in_moveloop = 0; /* won't be returning to normal play */
+
+    l_nhcore_call(NHCORE_GAME_EXIT);
 #ifdef MAC
     getreturn("to exit");
 #endif
@@ -1802,6 +1804,7 @@ nh_terminate(int status)
     if (!g.program_state.panicking) {
         freedynamicdata();
         dlb_cleanup();
+        l_nhcore_done();
     }
 
 #ifdef VMS

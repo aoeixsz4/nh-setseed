@@ -1,4 +1,4 @@
-/* NetHack 3.7	do_name.c	$NHDT-Date: 1614818323 2021/03/04 00:38:43 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.198 $ */
+/* NetHack 3.7	do_name.c	$NHDT-Date: 1622363509 2021/05/30 08:31:49 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.202 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Pasi Kallinen, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -884,7 +884,12 @@ getpos(coord *ccp, boolean force, const char *goal)
                         || glyph_to_cmap(k) == S_corr
                         || glyph_to_cmap(k) == S_litcorr)
                         continue;
-                    if (c == defsyms[sidx].sym || c == (int) g.showsyms[sidx])
+                    if (c == defsyms[sidx].sym
+                        || c == (int) g.showsyms[sidx]
+                        /* have '^' match webs and vibrating square or any
+                           other trap that uses something other than '^' */
+                        || (c == '^' && (is_cmap_trap(sidx)
+                                         || sidx == S_vibrating_square)))
                         matching[sidx] = (char) ++k;
                 }
                 if (k) {
@@ -2167,13 +2172,20 @@ roguename(void)
 
 static NEARDATA const char *const hcolors[] = {
     "ultraviolet", "infrared", "bluish-orange", "reddish-green", "dark white",
-    "light black", "sky blue-pink",
+    "light black", "sky blue-pink", "pinkish-cyan", "indigo-chartreuse",
     "salty", "sweet", "sour", "bitter", "umami", /* basic tastes */
     "striped", "spiral", "swirly", "plaid", "checkered", "argyle", "paisley",
     "blotchy", "guernsey-spotted", "polka-dotted", "square", "round",
     "triangular", "cabernet", "sangria", "fuchsia", "wisteria", "lemon-lime",
     "strawberry-banana", "peppermint", "romantic", "incandescent",
     "octarine", /* Discworld: the Colour of Magic */
+    "excitingly dull", "mauve", "electric",
+    "neon", "fluorescent", "phosphorescent", "translucent", "opaque",
+    "psychedelic", "iridescent", "rainbow-colored", "polychromatic",
+    "colorless", "colorless green",
+    "dancing", "singing", "loving", "loudy", "noisy", "clattery", "silent",
+    "apocyan", "infra-pink", "opalescent", "violant", "tuneless",
+    "viridian", "aureolin", "cinnabar", "purpurin", "gamboge", "madder",
 };
 
 const char *
@@ -2345,6 +2357,8 @@ lookup_novel(const char *lookname, int *idx)
         lookname = sir_Terry_novels[0];
     else if (!strcmpi(lookname, "Sorcery"))
         lookname = "Sourcery"; /* [4] */
+    else if (!strcmpi(lookname, "Masquerade"))
+        lookname = "Maskerade"; /* [17] */
 
     for (k = 0; k < SIZE(sir_Terry_novels); ++k) {
         if (!strcmpi(lookname, sir_Terry_novels[k])
