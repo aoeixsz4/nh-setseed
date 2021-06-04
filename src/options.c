@@ -3083,6 +3083,12 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
                shorter than 32-bytes when decoded */
             len_decoded = b64_decode(op, seed_tmp, len_encoded);
             strncpy(g.seed, seed_tmp, sizeof(g.seed));
+            if (sysopt.serverseed) {
+                for (i = 0; i < sizeof(g.seed); i++) {
+                    int seed_byte = (sysopt.serverseed >> i * 8) & 0xFF;
+                    g.seed[i] = g.seed[i] ^ seed_byte;
+                }
+            }
 
             /* save the seed as the user specified it, so that their original
                version is preserved in logs etc., even if we added funny padding

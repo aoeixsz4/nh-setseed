@@ -35,6 +35,7 @@ struct sysopt {
     int check_save_uid; /* restoring savefile checks UID? */
     int check_plname; /* use plname for checking wizards/explorers/shellers */
     int bones_pools;
+    int serverseed; /* added to a user-supplied seed for obfuscation */
 
     /* record file */
     int persmax;
