@@ -3050,6 +3050,10 @@ optfn_seed(int optidx, int req, boolean negated, char *opts, char *op)
     int i, len_encoded, len_decoded;
     char seed_tmp[MAX_RNG_SEED_LEN + 1];
 
+    if (sysopt.disable_user_seed) {
+        return optn_ok;
+    }
+
     if (req == do_init) {
         return optn_ok;
     }

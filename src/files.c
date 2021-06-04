@@ -2649,9 +2649,12 @@ parse_config_line(char *origbuf)
         }
         sysopt.seduce = n;
         sysopt_seduce_set(sysopt.seduce);
-    } else if (match_varname(buf, "SERVERSEED", 10)) {
+    } else if (in_sysconf && match_varname(buf, "SERVERSEED", 10)) {
         n = atoi(bufp);
         sysopt.serverseed = n;
+    } else if (in_sysconf && match_varname(buf, "DISABLE_USER_SEED", 17)) {
+        n = atoi(bufp);
+        sysopt.disable_user_seed = n;
     } else if (in_sysconf && match_varname(buf, "MAXPLAYERS", 10)) {
         n = atoi(bufp);
         /* XXX to get more than 25, need to rewrite all lock code */
