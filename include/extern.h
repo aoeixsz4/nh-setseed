@@ -1,4 +1,4 @@
-/* NetHack 3.7	extern.h	$NHDT-Date: 1620923916 2021/05/13 16:38:36 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.971 $ */
+/* NetHack 3.7	extern.h	$NHDT-Date: 1624322857 2021/06/22 00:47:37 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.985 $ */
 /* Copyright (c) Steve Creps, 1988.				  */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -203,12 +203,17 @@ extern char randomkey(void);
 extern void random_response(char *, int);
 extern int rnd_extcmd_idx(void);
 extern int domonability(void);
+extern const struct ext_func_tab *ext_func_tab_from_func(int(*)(void));
 extern char cmd_from_func(int(*)(void));
 extern const char *cmdname_from_func(int(*)(void), char *, boolean);
 extern boolean redraw_cmd(char);
 extern const char *levltyp_to_name(int);
 extern void reset_occupations(void);
 extern void set_occupation(int(*)(void), const char *, int);
+extern void cmdq_add_ec(int(*)(void));
+extern void cmdq_add_key(char);
+extern struct _cmd_queue *cmdq_pop(void);
+extern void cmdq_clear(void);
 extern char pgetchar(void);
 extern void pushch(char);
 extern void savech(char);
@@ -456,6 +461,8 @@ extern const char *lookup_novel(const char *, int *);
 extern int Mgender(struct monst *);
 extern const char *pmname(struct permonst *, int);
 #endif
+extern const char *mon_pmname(struct monst *);
+extern const char *obj_pmname(struct obj *);
 
 /* ### do_wear.c ### */
 
@@ -1508,6 +1515,7 @@ extern boolean big_little_match(int, int);
 extern const char *locomotion(const struct permonst *, const char *);
 extern const char *stagger(const struct permonst *, const char *);
 extern const char *on_fire(struct permonst *, struct attack *);
+extern const char *msummon_environ(struct permonst *, const char **);
 extern const struct permonst *raceptr(struct monst *);
 extern boolean olfaction(struct permonst *);
 unsigned long cvt_adtyp_to_mseenres(uchar);
@@ -1552,7 +1560,7 @@ extern void mplayer_talk(struct monst *);
 
 #if defined(MICRO) || defined(WIN32)
 
-/* ### msdos.c,os2.c,tos.c,winnt.c ### */
+/* ### msdos.c,os2.c,tos.c,windsys.c ### */
 
 #ifndef WIN32
 extern int tgetch(void);
@@ -1578,7 +1586,7 @@ extern void chdrive(char *);
 extern void disable_ctrlP(void);
 extern void enable_ctrlP(void);
 #endif
-#if defined(MICRO) && !defined(WINNT)
+#if defined(MICRO) && !defined(WIN32)
 extern void get_scr_size(void);
 #ifndef TOS
 extern void gotoxy(int, int);
@@ -1712,19 +1720,19 @@ extern const char *regex_error_desc(struct nhregex *);
 extern boolean regex_match(const char *, struct nhregex *);
 extern void regex_free(struct nhregex *);
 
-/* ### nttty.c ### */
+/* ### consoletty.c ### */
 
 #ifdef WIN32
 extern void get_scr_size(void);
-extern int nttty_kbhit(void);
-extern void nttty_open(int);
-extern void nttty_rubout(void);
+extern int consoletty_kbhit(void);
+extern void consoletty_open(int);
+extern void consoletty_rubout(void);
 extern int tgetch(void);
-extern int ntposkey(int *, int *, int *);
+extern int console_poskey(int *, int *, int *);
 extern void set_output_mode(int);
 extern void synch_cursor(void);
-extern void nethack_enter_nttty(void);
-extern void nttty_exit(void);
+extern void nethack_enter_consoletty(void);
+extern void consoletty_exit(void);
 #endif /* WIN32 */
 
 /* ### o_init.c ### */
@@ -2060,7 +2068,7 @@ extern boolean inhistemple(struct monst *);
 extern int pri_move(struct monst *);
 extern void priestini(d_level *, struct mkroom *, int, int, boolean);
 extern aligntyp mon_aligntyp(struct monst *);
-extern char *priestname(struct monst *, char *);
+extern char *priestname(struct monst *, int, char *);
 extern boolean p_coaligned(struct monst *);
 extern struct monst *findpriest(char);
 extern void intemple(int);
@@ -2360,7 +2368,7 @@ extern void sellobj(struct obj *, xchar, xchar);
 extern int doinvbill(int);
 extern struct monst *shkcatch(struct obj *, xchar, xchar);
 extern void add_damage(xchar, xchar, long);
-extern int repair_damage(struct monst *, struct damage *, int *, boolean);
+extern int repair_damage(struct monst *, struct damage *, boolean);
 extern int shk_move(struct monst *);
 extern void after_shk_move(struct monst *);
 extern boolean is_fshk(struct monst *);
@@ -2662,6 +2670,7 @@ extern boolean chest_trap(struct obj *, int, boolean);
 extern void deltrap(struct trap *);
 extern boolean delfloortrap(struct trap *);
 extern struct trap *t_at(int, int);
+extern int count_traps(int);
 extern void b_trapped(const char *, int);
 extern boolean unconscious(void);
 extern void blow_up_landmine(struct trap *);
@@ -3091,10 +3100,10 @@ extern char *decode_mixed(char *, const char *);
 extern void genl_putmixed(winid, int, const char *);
 extern boolean menuitem_invert_test(int, unsigned, boolean);
 
-/* ### winnt.c ### */
+/* ### windows.c ### */
 
 #ifdef WIN32
-extern void nethack_enter_winnt(void);
+extern void nethack_enter_windows(void);
 #endif
 
 /* ### wizard.c ### */
