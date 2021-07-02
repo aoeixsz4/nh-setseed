@@ -55,12 +55,31 @@ MAXPLAYERS=0
 # information help.
 SUPPORT=Contact K2 or Tangles on freenode irc channel #hardfought
 
+# Number added into the game's deterministic hash functions to prevent
+# players from computing the result of said functions. Mostly useful on
+# multi-user installs.
+# Do NOT keep this default value of 100 (maximum of 2147483647), choose
+# an arbitrary one, and don't disclose it to your players.
+# If this is set, it will invalidate user-supplied seeds.
+#SERVERSEED=100
+
+# If set to non-zero, ignore any user supplied seed.
+#DISABLE_USER_SEED=1
+
 # If not null, displayed at the end of a panic-save sequence.
 #RECOVER=Run the recover program.
 
 # Uncomment the next line to disable the SEDUCE option, causing succubi and
 # incubi to use nymphs' charm behavior rather than their own seduce behavior.
 #SEDUCE=0
+
+# Number added into the game's deterministic hash functions to prevent
+# players from computing the result of said functions. Mostly useful on
+# multi-user installs.
+# Do NOT keep this default value of 100 (maximum of 2147483647), choose
+# an arbitrary one, and don't disclose it to your players.
+# If this is set, it will invalidate user-supplied seeds.
+#SERVERSEED=100
 
 # Uncomment the next line to enable some accessibility features such
 # as S_hero_override and S_pet_override symbols for screen readers

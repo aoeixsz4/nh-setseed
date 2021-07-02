@@ -2649,6 +2649,12 @@ parse_config_line(char *origbuf)
         }
         sysopt.seduce = n;
         sysopt_seduce_set(sysopt.seduce);
+    } else if (in_sysconf && match_varname(buf, "SERVERSEED", 10)) {
+        n = atoi(bufp);
+        sysopt.serverseed = n;
+    } else if (in_sysconf && match_varname(buf, "DISABLE_USER_SEED", 17)) {
+        n = atoi(bufp);
+        sysopt.disable_user_seed = n;
     } else if (in_sysconf && match_varname(buf, "MAXPLAYERS", 10)) {
         n = atoi(bufp);
         /* XXX to get more than 25, need to rewrite all lock code */
@@ -4467,8 +4473,13 @@ reveal_paths(void)
     if (sysopt.portable_device_paths) {
         const char *pd = get_portable_device();
 
-        raw_printf("portable_device_paths (set in sysconf):");
-        raw_printf("    \"%s\"", pd);
+        /* an empty value for pd indicates that portable_device_paths
+           got set TRUE in a sysconf file other than the one containing
+           the executable; disregard it */
+        if (strlen(pd) > 0) {
+            raw_printf("portable_device_paths (set in sysconf):");
+            raw_printf("    \"%s\"", pd);
+	}
     }
 #endif
 
