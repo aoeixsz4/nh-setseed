@@ -14,7 +14,6 @@ const char *const enc_stat[] = { "",         "Burdened",  "Stressed",
                                  "Strained", "Overtaxed", "Overloaded" };
 
 static void bot_via_windowport(void);
-static void stat_update_time(void);
 #ifdef STATUS_HILITES
 static unsigned long query_conditions(void);
 static boolean status_hilite_remove(int);
@@ -988,7 +987,7 @@ bot_via_windowport(void)
 
 
 /* update just the status lines' 'time' and 'realtime' fields */
-static void
+void
 stat_update_time(void)
 {
     int idx = g.now_or_before_idx; /* no 0/1 toggle */

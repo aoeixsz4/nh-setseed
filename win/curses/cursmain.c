@@ -7,6 +7,8 @@
 #include "hack.h"
 #include "color.h"
 #include "wincurs.h"
+#include "cursstat.h"
+#include "botl.h"
 
 /* define this if not linking with <foo>tty.o|.obj for some reason */
 #ifdef CURSES_DEFINE_ERASE_CHAR
@@ -813,11 +815,16 @@ curses_nhgetch(void)
 {
     int ch;
 
-    curses_prehousekeeping();
-    ch = curses_read_char();
-    curses_posthousekeeping();
-
-    return ch;
+    for (;;) {
+        curses_prehousekeeping();
+        ch = curses_read_char();
+        if (ch != -1) {
+            curses_posthousekeeping();
+            return ch;
+        } else {
+            stat_update_time();
+        }
+    }
 }
 
 /*

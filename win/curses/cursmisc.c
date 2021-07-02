@@ -36,6 +36,7 @@ curses_read_char(void)
     curses_got_input();
 
     ch = getch();
+    if (ch == -1) return ch;
 #if defined(ALT_0) || defined(ALT_9) || defined(ALT_A) || defined(ALT_Z)
     tmpch = ch;
 #endif
@@ -628,6 +629,7 @@ curses_prehousekeeping(void)
 #endif /* PDCURSES */
         curses_refresh_nhwin(MAP_WIN);
     }
+    timeout(333);
 }
 
 
@@ -636,6 +638,7 @@ curses_prehousekeeping(void)
 void
 curses_posthousekeeping(void)
 {
+    timeout(-1);
     curs_set(0);
     /* curses_decrement_highlights(FALSE); */
     curses_clear_unhighlight_message_window();
